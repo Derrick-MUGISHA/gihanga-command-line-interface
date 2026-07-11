@@ -814,7 +814,7 @@ export class InteractiveMode {
 			].join(theme.fg("muted", " · "));
 			const compactOnboarding = theme.fg(
 				"dim",
-				`Press ${keyText("app.tools.expand")} to show full startup help and loaded resources.`,
+				`Press ${keyText("app.tools.expand")} to show full startup help, ubumenyi data, and loaded resources.`,
 			);
 			const rwandaVector = [
 				theme.fg("accent", "      /\\        ") + theme.fg("warning", "✦"),
@@ -827,8 +827,8 @@ export class InteractiveMode {
 				`Gihanga can explain its features and help with kode, providers, and ubumenyi.`,
 			);
 			this.builtInHeader = new ExpandableText(
-				() => `${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${rwandaVector}\n${onboarding}`,
-				() => `${logo}\n${expandedInstructions}\n\n${rwandaVector}\n${onboarding}`,
+				() => `${rwandaVector}\n${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${onboarding}`,
+				() => `${rwandaVector}\n${logo}\n${expandedInstructions}\n\n${onboarding}`,
 				this.getStartupExpansionState(),
 				1,
 				0,

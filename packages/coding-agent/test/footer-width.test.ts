@@ -158,7 +158,7 @@ describe("FooterComponent width handling", () => {
 
 		const statsLine = stripAnsi(footer.render(120)[1]);
 
-		expect(statsLine).toContain("0.009 RWF");
+		expect(statsLine).toContain("14 RWF");
 		expect(statsLine).toContain("Kigali 24°C ☀");
 		expect(statsLine).not.toContain("$0.009");
 	});

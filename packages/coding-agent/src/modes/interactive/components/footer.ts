@@ -42,6 +42,12 @@ export function formatCwdForFooter(cwd: string, home: string | undefined): strin
 	return relativeToHome === "" ? "~" : `~${sep}${relativeToHome}`;
 }
 
+const USD_TO_RWF_RATE = 1500;
+
+function formatRwfCost(usdCost: number): string {
+	return `${Math.round(usdCost * USD_TO_RWF_RATE + 1e-9).toLocaleString()} RWF`;
+}
+
 /**
  * Footer component that shows pwd, token stats, and context usage.
  * Computes token/context stats from session, gets git branch and extension statuses from provider.
@@ -140,7 +146,7 @@ export class FooterComponent implements Component {
 		// Show cost with "(sub)" indicator if using OAuth subscription
 		const usingSubscription = state.model ? this.session.modelRegistry.isUsingOAuth(state.model) : false;
 		if (totalCost || usingSubscription) {
-			const costStr = `${totalCost.toFixed(3)} RWF${usingSubscription ? " (sub)" : ""}`;
+			const costStr = `${formatRwfCost(totalCost)}${usingSubscription ? " (sub)" : ""}`;
 			statsParts.push(costStr);
 		}
 
