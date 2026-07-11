@@ -1,14 +1,7 @@
-import { join } from "node:path";
-import { getDocsPath } from "../config.ts";
-
 const UNKNOWN_PROVIDER = "unknown";
 
 export function getProviderLoginHelp(): string {
-	return [
-		"Use /kwinjira to log into a provider via OAuth or API key. See:",
-		`  ${join(getDocsPath(), "providers.md")}`,
-		`  ${join(getDocsPath(), "models.md")}`,
-	].join("\n");
+	return "Use /kwinjira to log into a provider via OAuth or API key.";
 }
 
 export function formatNoModelsAvailableMessage(): string {
