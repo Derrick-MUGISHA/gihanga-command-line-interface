@@ -1,6 +1,6 @@
-# Gihanga CLI
+# Gihanga Command Line Interface
 
-Gihanga CLI ni umufasha wa AI mu kwandika kode ukoreshwa muri terminal, ushyira Ikinyarwanda imbere. Ifasha abanditsi ba porogaramu gusoma, guhindura, kwandika, no gukoresha kode hifashishijwe command line.
+Gihanga ni umufasha/ejenti wa AI mu kwandika kode ukoreshwa muri terminal, ushyira Ikinyarwanda imbere. Ifasha abanditsi ba porogaramu gusoma, guhindura, kwandika, no gukoresha kode hifashishijwe command line.
 
 Urubuga: https://console.upskillsafrica.org
 
