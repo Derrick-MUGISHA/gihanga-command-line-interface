@@ -192,7 +192,7 @@ Kuri Windows development:
 
 - Command nyamukuru ni `gihanga`.
 - Command syntax nka `install` iguma mu Cyongereza kugira ngo copy-paste compatibility ikomeze, ariko help text n'inyandiko rusange bikoresha Ikinyarwanda-first.
-- Uyu mushinga uhindurwa kugira ngo ufashe umuryango w'abanditsi ba porogaramu bakoresha Ikinyarwanda.
+
 
 ## License
 
