@@ -684,7 +684,7 @@ describe("InteractiveMode.showLoadedResources", () => {
 		});
 
 		const output = renderAll(fakeThis.loadedResourcesContainer);
-		expect(output).toContain("[Ubumeny]");
+		expect(output).toContain("[Ubumenyi]");
 		expect(output).toContain("commit");
 		expect(output).not.toContain("resource-list");
 	});
@@ -701,7 +701,7 @@ describe("InteractiveMode.showLoadedResources", () => {
 		});
 
 		const output = renderAll(fakeThis.loadedResourcesContainer);
-		expect(output).toContain("[Ubumeny]");
+		expect(output).toContain("[Ubumenyi]");
 		expect(output).toContain("resource-list");
 		expect(output).not.toContain("commit");
 	});
@@ -719,7 +719,7 @@ describe("InteractiveMode.showLoadedResources", () => {
 		});
 
 		const output = renderAll(fakeThis.loadedResourcesContainer);
-		expect(output).toContain("[Ubumeny]");
+		expect(output).toContain("[Ubumenyi]");
 		expect(output).toContain("resource-list");
 		expect(output).not.toContain("commit");
 	});

@@ -824,7 +824,7 @@ export class InteractiveMode {
 			].join("\n");
 			const onboarding = theme.fg(
 				"dim",
-				`Gihanga can explain its features and help with kode, providers, and ubumeny.`,
+				`Gihanga can explain its features and help with kode, providers, and ubumenyi.`,
 			);
 			this.builtInHeader = new ExpandableText(
 				() => `${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${rwandaVector}\n${onboarding}`,
@@ -1549,7 +1549,7 @@ export class InteractiveMode {
 					formatPackagePath: (item) => this.getShortPath(item.path, item.sourceInfo),
 				});
 				const skillCompactList = formatCompactList(skills.map((skill) => skill.name));
-				addLoadedSection("Ubumeny", skillCompactList, skillList);
+				addLoadedSection("Ubumenyi", skillCompactList, skillList);
 			}
 
 			const templates = this.session.promptTemplates;
@@ -5357,7 +5357,7 @@ export class InteractiveMode {
 		reloadBox.addChild(new Spacer(1));
 		reloadBox.addChild(
 			new Text(
-				theme.fg("muted", "Reloading keybindings, extensions, skills, prompts, themes, and context files..."),
+				theme.fg("muted", "Reloading keybindings, extensions, ubumenyi, prompts, themes, and context files..."),
 				1,
 				0,
 			),
@@ -5430,8 +5430,8 @@ export class InteractiveMode {
 			}
 			this.showStatus(
 				savedImplicitProjectTrust
-					? "Reloaded keybindings, extensions, skills, prompts, themes, and context files; saved project trust"
-					: "Reloaded keybindings, extensions, skills, prompts, themes, and context files",
+					? "Reloaded keybindings, extensions, ubumenyi, prompts, themes, and context files; saved project trust"
+					: "Reloaded keybindings, extensions, ubumenyi, prompts, themes, and context files",
 			);
 			dismissReloadBox(this.editor as Component);
 			reloadBoxDismissed = true;

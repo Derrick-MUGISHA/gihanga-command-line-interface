@@ -33,7 +33,7 @@ const RESOURCE_TYPES = ["extensions", "skills", "prompts", "themes"] as const sa
 
 const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
 	extensions: "Extensions",
-	skills: "Skills",
+	skills: "Ubumenyi",
 	prompts: "Prompts",
 	themes: "Themes",
 };
