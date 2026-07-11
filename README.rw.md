@@ -133,7 +133,7 @@ Mu buryo bw'ibiganiro, andika `/` kugira ngo ubone slash commands nka:
 /settings
 /model
 /login
-/resume
+/continue
 /new
 /compact
 /quit

@@ -36,7 +36,7 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "logout", description: "Kuraho authentication ya provider" },
 	{ name: "new", description: "Tangira ikiganiro gishya" },
 	{ name: "compact", description: "Gabanya context y'ikiganiro ukoresheje compact" },
-	{ name: "resume", description: "Komeza ikindi kiganiro" },
+	{ name: "continue", description: "Komeza ikiganiro" },
 	{
 		name: "reload",
 		description: "Ongera ufungure keybindings, ingereko, ubumenyi, prompts, themes, na context files",

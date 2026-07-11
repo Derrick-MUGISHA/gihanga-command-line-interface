@@ -133,7 +133,7 @@ Inside interactive mode, type `/` to see slash commands such as:
 /settings
 /model
 /login
-/resume
+/continue
 /new
 /compact
 /quit

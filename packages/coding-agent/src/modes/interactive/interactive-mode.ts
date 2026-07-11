@@ -2760,7 +2760,7 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
-			if (text === "/resume") {
+			if (text === "/continue" || text === "/resume") {
 				this.showSessionSelector();
 				this.editor.setText("");
 				return;
