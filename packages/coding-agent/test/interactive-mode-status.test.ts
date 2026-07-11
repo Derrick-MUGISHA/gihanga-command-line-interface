@@ -459,14 +459,19 @@ describe("InteractiveMode.createBaseAutocompleteProvider", () => {
 			sessionManager: { getCwd: () => "/tmp" },
 			fdPath: null,
 			getLoginProviderOptions: () => [
-				{ id: "anthropic", name: "Anthropic", authType: "oauth" },
 				{ id: "anthropic", name: "Anthropic", authType: "api_key" },
 				{ id: "openai", name: "OpenAI", authType: "api_key" },
+				{
+					id: "upskillsafrica-rask-d-technology",
+					name: "UpSkills Africa / Rask-D Technology",
+					authType: "api_key",
+					comingSoon: true,
+				},
 			],
 		};
 
 		const provider = createBaseAutocompleteProvider.call(fakeThis);
-		const line = "/login subscription anthrop";
+		const line = "/kwinjira anthrop";
 		const suggestions = await provider.getSuggestions([line], 0, line.length, {
 			signal: new AbortController().signal,
 		});
@@ -475,7 +480,7 @@ describe("InteractiveMode.createBaseAutocompleteProvider", () => {
 			{
 				value: "anthropic",
 				label: "anthropic",
-				description: "Anthropic · subscription/API key",
+				description: "Anthropic · API key",
 			},
 		]);
 	});

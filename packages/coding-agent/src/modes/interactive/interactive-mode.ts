@@ -268,9 +268,24 @@ type LoginProviderCompletionOption = {
 	id: string;
 	name: string;
 	authTypes: AuthSelectorProvider["authType"][];
+	comingSoon?: boolean;
 };
 
 const AUTH_TYPE_ORDER = { oauth: 0, api_key: 1 } satisfies Record<AuthSelectorProvider["authType"], number>;
+const UPSKILLS_AFRICA_PROVIDER_OPTIONS = [
+	{
+		id: "upskillsafrica-rask-d-technology",
+		name: "UpSkills Africa / Rask-D Technology",
+		authType: "api_key",
+		comingSoon: true,
+	},
+	{
+		id: "upskillsafrica-replysuite-assistant",
+		name: "UpSkills Africa / ReplySuite Assistant",
+		authType: "api_key",
+		comingSoon: true,
+	},
+] satisfies AuthSelectorProvider[];
 
 function createFuzzyAutocompleteItems<T>(
 	items: T[],
@@ -300,6 +315,7 @@ function getLoginProviderCompletionOptions(
 			id: provider.id,
 			name: provider.name,
 			authTypes: [provider.authType],
+			comingSoon: provider.comingSoon,
 		});
 	}
 	return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name));
@@ -313,6 +329,9 @@ function getLoginProviderSearchText(provider: LoginProviderCompletionOption): st
 }
 
 function formatLoginProviderCompletionDescription(provider: LoginProviderCompletionOption): string {
+	if (provider.comingSoon) {
+		return `${provider.name} · coming soon`;
+	}
 	const authTypes = provider.authTypes.map(formatAuthSelectorProviderType).join("/");
 	return provider.name === provider.id ? authTypes : `${provider.name} · ${authTypes}`;
 }
@@ -594,7 +613,7 @@ export class InteractiveMode {
 			};
 		}
 
-		const loginCommand = slashCommands.find((command) => command.name === "login");
+		const loginCommand = slashCommands.find((command) => command.name === "kwinjira");
 		if (loginCommand) {
 			loginCommand.getArgumentCompletions = (prefix: string): AutocompleteItem[] | null => {
 				const providers = getLoginProviderCompletionOptions(this.getLoginProviderOptions());
@@ -4814,14 +4833,10 @@ export class InteractiveMode {
 	}
 
 	private getLoginProviderOptions(authType?: "oauth" | "api_key"): AuthSelectorProvider[] {
-		const authStorage = this.session.modelRegistry.authStorage;
-		const oauthProviders = authStorage.getOAuthProviders();
-		const oauthProviderIds = new Set(oauthProviders.map((provider) => provider.id));
-		const options: AuthSelectorProvider[] = oauthProviders.map((provider) => ({
-			id: provider.id,
-			name: provider.name,
-			authType: "oauth",
-		}));
+		const oauthProviderIds = new Set(
+			this.session.modelRegistry.authStorage.getOAuthProviders().map((provider) => provider.id),
+		);
+		const options: AuthSelectorProvider[] = [];
 
 		const modelProviders = new Set(this.session.modelRegistry.getAll().map((model) => model.provider));
 		for (const providerId of modelProviders) {
@@ -4836,7 +4851,11 @@ export class InteractiveMode {
 		}
 
 		const filteredOptions = authType ? options.filter((option) => option.authType === authType) : options;
-		return filteredOptions.sort((a, b) => a.name.localeCompare(b.name));
+		if (authType === "oauth") {
+			return [];
+		}
+		const sortedOptions = filteredOptions.sort((a, b) => a.name.localeCompare(b.name));
+		return authType ? sortedOptions : [...UPSKILLS_AFRICA_PROVIDER_OPTIONS, ...sortedOptions];
 	}
 
 	private getLogoutProviderOptions(): AuthSelectorProvider[] {
@@ -4895,6 +4914,10 @@ export class InteractiveMode {
 	}
 
 	private async startProviderLogin(providerOption: AuthSelectorProvider): Promise<void> {
+		if (providerOption.comingSoon) {
+			this.showStatus(`${providerOption.name} is coming soon.`);
+			return;
+		}
 		if (providerOption.authType === "oauth") {
 			await this.showLoginDialog(providerOption.id, providerOption.name);
 		} else {
@@ -4903,50 +4926,32 @@ export class InteractiveMode {
 	}
 
 	private showLoginAuthTypeSelector(providerOptions?: AuthSelectorProvider[]): void {
-		const subscriptionLabel = "Use a subscription";
 		const apiKeyLabel = "Use an API key";
-		const availableAuthTypes = providerOptions
-			? new Set(providerOptions.map((provider) => provider.authType))
-			: new Set<AuthSelectorProvider["authType"]>(["oauth", "api_key"]);
-		const options: string[] = [];
-		if (availableAuthTypes.has("oauth")) {
-			options.push(subscriptionLabel);
-		}
-		if (availableAuthTypes.has("api_key")) {
-			options.push(apiKeyLabel);
-		}
+		const upskillsAfricaLabel = "Use UpSkills Africa provider";
+		const options: string[] = [apiKeyLabel, upskillsAfricaLabel];
 
-		if (options.length === 0) {
-			this.showStatus("No login methods available.");
-			return;
-		}
-
-		if (providerOptions && options.length === 1) {
-			const providerOption = providerOptions[0];
+		if (providerOptions) {
+			const providerOption = providerOptions.find((provider) => provider.authType === "api_key");
 			if (providerOption) {
 				void this.startProviderLogin(providerOption);
+			} else {
+				this.showStatus("No API key login method available for that provider.");
 			}
 			return;
 		}
 
-		const title = providerOptions?.[0]
-			? `Select authentication method for ${providerOptions[0].name}:`
-			: "Select authentication method:";
+		const title = "Select authentication method:";
 		this.showSelector((done) => {
 			const selector = new ExtensionSelectorComponent(
 				title,
 				options,
 				(option) => {
 					done();
-					const authType = option === subscriptionLabel ? "oauth" : "api_key";
-					if (providerOptions) {
-						const providerOption = providerOptions.find((provider) => provider.authType === authType);
-						if (providerOption) {
-							void this.startProviderLogin(providerOption);
-						}
-						return;
+					if (option === upskillsAfricaLabel) {
+						this.showLoginProviderSelector("api_key", undefined, UPSKILLS_AFRICA_PROVIDER_OPTIONS);
+					} else {
+						this.showLoginProviderSelector("api_key");
 					}
-					this.showLoginProviderSelector(authType);
 				},
 				() => {
 					done();
@@ -4957,15 +4962,14 @@ export class InteractiveMode {
 		});
 	}
 
-	private showLoginProviderSelector(authType?: AuthSelectorProvider["authType"], initialSearchInput?: string): void {
-		const providerOptions = this.getLoginProviderOptions(authType);
+	private showLoginProviderSelector(
+		authType?: AuthSelectorProvider["authType"],
+		initialSearchInput?: string,
+		providerOptionOverride?: AuthSelectorProvider[],
+	): void {
+		const providerOptions = providerOptionOverride ?? this.getLoginProviderOptions(authType);
 		if (providerOptions.length === 0) {
-			const message =
-				authType === "oauth"
-					? "No subscription providers available."
-					: authType === "api_key"
-						? "No API key providers available."
-						: "No login providers available.";
+			const message = authType === "api_key" ? "No API key providers available." : "No login providers available.";
 			this.showStatus(message);
 			return;
 		}

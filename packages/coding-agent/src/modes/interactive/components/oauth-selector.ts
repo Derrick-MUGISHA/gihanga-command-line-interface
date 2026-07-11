@@ -15,6 +15,7 @@ export type AuthSelectorProvider = {
 	id: string;
 	name: string;
 	authType: "oauth" | "api_key";
+	comingSoon?: boolean;
 };
 
 export function formatAuthSelectorProviderType(authType: AuthSelectorProvider["authType"]): string {
@@ -127,17 +128,19 @@ export class OAuthSelectorComponent extends Container implements Focusable {
 
 			const isSelected = i === this.selectedIndex;
 
-			const statusIndicator = this.formatStatusIndicator(provider);
+			const statusIndicator = provider.comingSoon
+				? theme.fg("muted", " • coming soon")
+				: this.formatStatusIndicator(provider);
 			const authTypeLabel = this.showAuthTypeLabels
 				? theme.fg("muted", ` [${formatAuthSelectorProviderType(provider.authType)}]`)
 				: "";
 			let line = "";
 			if (isSelected) {
 				const prefix = theme.fg("accent", "→ ");
-				const text = theme.fg("accent", provider.name);
+				const text = provider.comingSoon ? theme.fg("muted", provider.name) : theme.fg("accent", provider.name);
 				line = prefix + text + authTypeLabel + statusIndicator;
 			} else {
-				const text = `  ${theme.fg("text", provider.name)}`;
+				const text = `  ${theme.fg(provider.comingSoon ? "muted" : "text", provider.name)}`;
 				line = text + authTypeLabel + statusIndicator;
 			}
 

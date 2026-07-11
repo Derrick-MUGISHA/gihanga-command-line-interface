@@ -81,6 +81,30 @@ describe("OAuthSelectorComponent", () => {
 		expect(output).not.toContain("unconfigured");
 	});
 
+	it("marks coming soon providers without showing auth status", () => {
+		const authStorage = AuthStorage.inMemory();
+		const selector = new OAuthSelectorComponent(
+			"login",
+			authStorage,
+			[
+				{
+					id: "upskillsafrica-rask-d-technology",
+					name: "UpSkills Africa / Rask-D Technology",
+					authType: "api_key",
+					comingSoon: true,
+				},
+			],
+			() => {},
+			() => {},
+		);
+
+		const output = stripAnsi(selector.render(120).join("\n"));
+
+		expect(output).toContain("UpSkills Africa / Rask-D Technology");
+		expect(output).toContain("coming soon");
+		expect(output).not.toContain("unconfigured");
+	});
+
 	it("shows custom provider environment API key auth from status resolver", () => {
 		const authStorage = AuthStorage.inMemory();
 		const selector = new OAuthSelectorComponent(

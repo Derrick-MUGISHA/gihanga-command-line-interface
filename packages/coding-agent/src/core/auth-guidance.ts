@@ -1,7 +1,7 @@
 const UNKNOWN_PROVIDER = "unknown";
 
 export function getProviderLoginHelp(): string {
-	return "Use /kwinjira to log into a provider via OAuth or API key.";
+	return "Use /kwinjira to add an API key.";
 }
 
 export function formatNoModelsAvailableMessage(): string {
