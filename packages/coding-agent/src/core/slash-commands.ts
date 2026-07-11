@@ -32,7 +32,7 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "clone", description: "Koporora ikiganiro kiriho aho kigeze ubu" },
 	{ name: "tree", description: "Genda mu giti cy'ikiganiro (hindura amashami)" },
 	{ name: "trust", description: "Bika icyemezo cyo kwizera poroje ku biganiro bizaza" },
-	{ name: "login", description: "Tegura authentication ya provider", argumentHint: "<provider>" },
+	{ name: "kwinjira", description: "Tegura authentication ya provider", argumentHint: "<provider>" },
 	{ name: "logout", description: "Kuraho authentication ya provider" },
 	{ name: "new", description: "Tangira ikiganiro gishya" },
 	{ name: "compact", description: "Gabanya context y'ikiganiro ukoresheje compact" },
@@ -41,5 +41,5 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 		name: "reload",
 		description: "Ongera ufungure keybindings, ingereko, ubumenyi, prompts, themes, na context files",
 	},
-	{ name: "quit", description: `Sohoka muri ${APP_NAME}` },
+	{ name: "sohoka", description: `Sohoka muri ${APP_NAME}` },
 ];

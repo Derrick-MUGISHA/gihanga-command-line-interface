@@ -132,20 +132,20 @@ Mu buryo bw'ibiganiro, andika `/` kugira ngo ubone slash commands nka:
 ```text
 /settings
 /model
-/login
+/kwinjira
 /continue
 /new
 /compact
-/quit
+/sohoka
 ```
 
 ## Kwinjira / Authentication
 
-Ushobora gutangira Gihanga hanyuma ugakoresha `/login`:
+Ushobora gutangira Gihanga hanyuma ugakoresha `/kwinjira`:
 
 ```bash
 gihanga
-# hanyuma wandike: /login
+# hanyuma wandike: /kwinjira
 ```
 
 Cyangwa ugashyiraho API key ukoresheje environment variables, urugero:

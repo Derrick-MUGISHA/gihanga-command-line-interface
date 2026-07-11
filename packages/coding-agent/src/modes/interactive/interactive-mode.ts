@@ -2718,8 +2718,12 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
-			if (text === "/login" || text.startsWith("/login ")) {
-				const providerRef = text.startsWith("/login ") ? text.slice(7).trim() : undefined;
+			if (text === "/kwinjira" || text.startsWith("/kwinjira ") || text === "/login" || text.startsWith("/login ")) {
+				const providerRef = text.startsWith("/kwinjira ")
+					? text.slice(10).trim()
+					: text.startsWith("/login ")
+						? text.slice(7).trim()
+						: undefined;
 				this.editor.setText("");
 				await this.handleLoginCommand(providerRef);
 				return;
@@ -2765,7 +2769,7 @@ export class InteractiveMode {
 				this.editor.setText("");
 				return;
 			}
-			if (text === "/quit") {
+			if (text === "/sohoka" || text === "/quit") {
 				this.editor.setText("");
 				await this.shutdown();
 				return;
@@ -3524,7 +3528,7 @@ export class InteractiveMode {
 			process.exit(0);
 		}
 
-		// Interactive quit (Ctrl+D, Ctrl+C, /quit, extension shutdown()). Stop the
+		// Interactive quit (Ctrl+D, Ctrl+C, /sohoka, extension shutdown()). Stop the
 		// TUI before emitting shutdown events so extension UI cleanup cannot repaint
 		// the final frame while the process is exiting.
 		// Drain any in-flight Kitty key release events before stopping.
@@ -5007,7 +5011,7 @@ export class InteractiveMode {
 		const providerOptions = this.getLogoutProviderOptions();
 		if (providerOptions.length === 0) {
 			this.showStatus(
-				"No stored credentials to remove. /logout only removes credentials saved by /login; environment variables and models.json config are unchanged.",
+				"No stored credentials to remove. /logout only removes credentials saved by /kwinjira; environment variables and models.json config are unchanged.",
 			);
 			return;
 		}

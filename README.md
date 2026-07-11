@@ -132,20 +132,20 @@ Inside interactive mode, type `/` to see slash commands such as:
 ```text
 /settings
 /model
-/login
+/kwinjira
 /continue
 /new
 /compact
-/quit
+/sohoka
 ```
 
 ## Authentication
 
-You can start Gihanga and use `/login`:
+You can start Gihanga and use `/kwinjira`:
 
 ```bash
 gihanga
-# then type: /login
+# then type: /kwinjira
 ```
 
 Or provide an API key through environment variables such as:

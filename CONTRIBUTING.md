@@ -90,7 +90,7 @@ Keep literal flags and command names unchanged:
 - `--help`
 - `--model`
 - `/settings`
-- `/login`
+- `/kwinjira`
 
 Do not translate command syntax if it would break copy-paste examples.
 
