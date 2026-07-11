@@ -4,8 +4,8 @@ Gihanga CLI ni umufasha wa AI mu kwandika kode ukoreshwa muri terminal, ushyira 
 
 Urubuga: https://console.upskillsafrica.org
 
-> Inyandiko y'Ikinyarwanda: iyi dosiye  
-> English documentation: [README.md](README.md)
+> Iyi README ishyira Ikinyarwanda imbere.  
+> English documentation: [README.en.md](README.en.md)
 
 ## Icyo ikora
 
@@ -50,17 +50,16 @@ Urubuga: https://console.upskillsafrica.org
 - Linux, macOS, cyangwa Windows terminal
 - Node.js `>=22.19.0`
 - npm
+- Git
 - Credential ya AI provider imwe ishyigikiwe, cyangwa kwinjira ukoresheje CLI
 
-## Script yo kwinjiza local
+## Kwinjiza kuri Linux / macOS
 
-Kwinjiza ukoresheje command imwe:
+Koresha iyi command:
 
 ```bash
 curl -fsSL https://console.upskillsafrica.org/install.sh | bash
 ```
-
-Iyi installer ishyira cyangwa ivugurura Gihanga CLI muri `~/.gihanga-cli`, ikayubaka, hanyuma igahuza command `gihanga` kuri uyu mukoresha.
 
 Niba ushaka indi folder:
 
@@ -68,21 +67,32 @@ Niba ushaka indi folder:
 curl -fsSL https://console.upskillsafrica.org/install.sh | GIHANGA_INSTALL_DIR="$HOME/Tools/gihanga-cli" bash
 ```
 
-Kwinjiza manually:
+## Kwinjiza kuri Windows
+
+Koresha PowerShell:
+
+```powershell
+iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex
+```
+
+Niba ushaka indi folder:
+
+```powershell
+$env:GIHANGA_INSTALL_DIR="$HOME\Tools\gihanga-cli"; iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex
+```
+
+Iyi installer ishyira cyangwa ivugurura Gihanga CLI muri `~/.gihanga-cli`, ikayubaka, hanyuma igahuza command `gihanga` kuri uyu mukoresha.
+
+## Kwinjiza manually
 
 ```bash
 git clone https://github.com/DannyIRUMVA/gihanga-command-line-interface.git
 cd gihanga-command-line-interface
-./install-local.sh
-gihanga --help
-```
-
-Iyo script ikora ibi:
-
-```bash
 npm install --ignore-scripts
 npm run build
-# ihuza command ya gihanga kuri uyu mukoresha
+cd packages/coding-agent
+npm link
+gihanga --help
 ```
 
 Nyuma y'ibi, command `gihanga` izajya ikora aho uri hose kuri mudasobwa yawe kuri uyu mukoresha.
@@ -94,7 +104,8 @@ cd gihanga-command-line-interface
 git pull
 npm install --ignore-scripts
 npm run build
-# ihuza command ya gihanga kuri uyu mukoresha
+cd packages/coding-agent
+npm link
 gihanga --version
 ```
 
@@ -163,7 +174,13 @@ Providers zishyigikiwe zirimo Anthropic, OpenAI, Google Gemini, GitHub Copilot, 
 npm install --ignore-scripts
 npm run build
 npm run check
-./test.sh
+./gihanga-test.sh
+```
+
+Kuri Windows development:
+
+```powershell
+.\gihanga-test.ps1
 ```
 
 ## Icyitonderwa

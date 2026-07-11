@@ -1,133 +1,144 @@
 # Gihanga CLI
 
-Gihanga CLI is a Kinyarwanda-first AI coding assistant for the terminal. It helps developers read, edit, write, and run code from the command line while keeping the familiar workflow of a coding agent.
+Gihanga CLI ni umufasha wa AI mu kwandika kode ukoreshwa muri terminal, ushyira Ikinyarwanda imbere. Ifasha abanditsi ba porogaramu gusoma, guhindura, kwandika, no gukoresha kode hifashishijwe command line.
 
-Website: https://console.upskillsafrica.org
+Urubuga: https://console.upskillsafrica.org
 
-> English documentation: this file  
-> Kinyarwanda documentation: [README.rw.md](README.rw.md)
+> Iyi README ishyira Ikinyarwanda imbere.  
+> English documentation: [README.en.md](README.en.md)
 
-## What it does
+## Icyo ikora
 
-- Opens an interactive terminal coding assistant with `gihanga`
-- Reads project files and explains code
-- Edits and writes files when you ask it to
-- Runs shell commands through the built-in bash tool
-- Supports multiple AI providers and models
-- Supports ubumenyi, extensions, prompt templates, and themes
-- Shows Kinyarwanda-first CLI help and slash-command descriptions
+- Ifungura umufasha wa kode muri terminal ukoresheje `gihanga`
+- Isoma amadosiye ya poroje kandi igasobanura kode
+- Ihindura cyangwa ikandika amadosiye iyo ubiyisabye
+- Ikoresha shell commands ibinyujije mu gikoresho cya bash
+- Ishyigikira providers na models zitandukanye za AI
+- Ishyigikira ubumenyi, ingereko, prompt templates, na themes
+- Igaragaza ubufasha bwa CLI n'amabwiriza ya `/` mu Kinyarwanda-first
 
-## Terminal graph
+## Igishushanyo cya terminal
 
 ```text
 ┌──────────────────────────────┐
 │          Gihanga CLI          │
-│  Kinyarwanda-first AI helper  │
+│ Umufasha wa AI mu Kinyarwanda │
 └───────────────┬──────────────┘
                 │
                 ▼
 ┌──────────────────────────────┐
 │ gihanga                      │
-│ Start the terminal assistant │
+│ Tangiza umufasha muri terminal│
 └───────────────┬──────────────┘
                 │
      ┌──────────┼──────────┐
      ▼          ▼          ▼
 ┌─────────┐ ┌─────────┐ ┌─────────┐
 │  read   │ │  edit   │ │  bash   │
-│ files   │ │  code   │ │command  │
+│ amadosiye││  kode   │ │ command │
 └────┬────┘ └────┬────┘ └────┬────┘
      └──────────┼──────────┘
                 ▼
 ┌──────────────────────────────┐
-│ Write changes, explain code, │
-│ and keep your workflow local │
+│ Andika impinduka, sobanura   │
+│ kode, ukomeze ukorera local  │
 └──────────────────────────────┘
 ```
 
-## Requirements
+## Ibisabwa
 
-- Linux, macOS, or Windows terminal
+- Linux, macOS, cyangwa Windows terminal
 - Node.js `>=22.19.0`
 - npm
-- At least one supported AI provider credential, or login through the CLI
+- Git
+- Credential ya AI provider imwe ishyigikiwe, cyangwa kwinjira ukoresheje CLI
 
-## Local install script
+## Kwinjiza kuri Linux / macOS
 
-One-command install:
+Koresha iyi command:
 
 ```bash
 curl -fsSL https://console.upskillsafrica.org/install.sh | bash
 ```
 
-The installer clones or updates Gihanga CLI in `~/.gihanga-cli`, builds it, and links the `gihanga` command for the current user.
-
-To choose another install folder:
+Niba ushaka indi folder:
 
 ```bash
 curl -fsSL https://console.upskillsafrica.org/install.sh | GIHANGA_INSTALL_DIR="$HOME/Tools/gihanga-cli" bash
 ```
 
-Manual install:
+## Kwinjiza kuri Windows
+
+Koresha PowerShell:
+
+```powershell
+iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex
+```
+
+Niba ushaka indi folder:
+
+```powershell
+$env:GIHANGA_INSTALL_DIR="$HOME\Tools\gihanga-cli"; iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex
+```
+
+Iyi installer ishyira cyangwa ivugurura Gihanga CLI muri `~/.gihanga-cli`, ikayubaka, hanyuma igahuza command `gihanga` kuri uyu mukoresha.
+
+## Kwinjiza manually
 
 ```bash
 git clone https://github.com/DannyIRUMVA/gihanga-command-line-interface.git
 cd gihanga-command-line-interface
-./install-local.sh
+npm install --ignore-scripts
+npm run build
+cd packages/coding-agent
+npm link
 gihanga --help
 ```
 
-The script runs:
+Nyuma y'ibi, command `gihanga` izajya ikora aho uri hose kuri mudasobwa yawe kuri uyu mukoresha.
 
-```bash
-npm install --ignore-scripts
-npm run build
-# links the gihanga command for your user
-```
-
-After this, the `gihanga` command should work from anywhere on your computer for the current user.
-
-## Updating your local install
+## Kuvugurura local install
 
 ```bash
 cd gihanga-command-line-interface
 git pull
 npm install --ignore-scripts
 npm run build
-# links the gihanga command for your user
+cd packages/coding-agent
+npm link
 gihanga --version
 ```
 
-## Basic usage
+## Imikoreshereze y'ibanze
 
 ```bash
-# Start interactive mode
+# Tangira uburyo bw'ibiganiro
 gihanga
 
-# Ask one question and exit
-gihanga -p "Explain this project"
+# Baza ikibazo kimwe hanyuma usohoke
+gihanga -p "Sobanura iyi poroje"
 
-# Include files in the first message
-gihanga @README.md "Summarize this file"
+# Shyiramo dosiye mu butumwa bwa mbere
+gihanga @README.md "Vuga muri make iyi dosiye"
 
-# Show help
+# Erekana ubufasha
 gihanga --help
 
-# List available models
+# Erekana models zihari
 gihanga --list-models
 ```
 
-## Common commands
+## Amategeko akoreshwa cyane
 
 ```bash
-gihanga install <source>      # Install an extension/package source
-gihanga remove <source>       # Remove an extension/package source
-gihanga update                # Update Gihanga
-gihanga list                  # List installed packages/extensions
-gihanga config                # Open package resource configuration
+gihanga install <source>      # Injiza extension/package source
+gihanga remove <source>       # Kuramo extension/package source
+gihanga update                # Vugurura Gihanga
+gihanga list                  # Erekana packages/extensions zinjijwe
+gihanga config                # Fungura igenamiterere rya package resources
 ```
 
-Inside interactive mode, type `/` to see slash commands such as:
+Mu buryo bw'ibiganiro, andika `/` kugira ngo ubone slash commands nka:
 
 ```text
 /settings
@@ -139,39 +150,45 @@ Inside interactive mode, type `/` to see slash commands such as:
 /sohoka
 ```
 
-## Authentication
+## Kwinjira / Authentication
 
-You can start Gihanga and use `/kwinjira`:
+Ushobora gutangira Gihanga hanyuma ugakoresha `/kwinjira`:
 
 ```bash
 gihanga
-# then type: /kwinjira
+# hanyuma wandike: /kwinjira
 ```
 
-Or provide an API key through environment variables such as:
+Cyangwa ugashyiraho API key ukoresheje environment variables, urugero:
 
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
 gihanga
 ```
 
-Supported providers include Anthropic, OpenAI, Google Gemini, GitHub Copilot, OpenRouter, Groq, Cerebras, Mistral, Amazon Bedrock, Cloudflare, and others.
+Providers zishyigikiwe zirimo Anthropic, OpenAI, Google Gemini, GitHub Copilot, OpenRouter, Groq, Cerebras, Mistral, Amazon Bedrock, Cloudflare, n'izindi.
 
-## Development
+## Iterambere / Development
 
 ```bash
 npm install --ignore-scripts
 npm run build
 npm run check
-./test.sh
+./gihanga-test.sh
 ```
 
-## Notes
+Kuri Windows development:
 
-- The command name is `gihanga`.
-- The actual command flags stay in English for compatibility, while help text is Kinyarwanda-first.
-- This project is adapted for the Kinyarwanda developer community.
+```powershell
+.\gihanga-test.ps1
+```
+
+## Icyitonderwa
+
+- Command nyamukuru ni `gihanga`.
+- Flags za command ziguma mu Cyongereza kugira ngo compatibility ikomeze, ariko help text ni Kinyarwanda-first.
+- Uyu mushinga uhindurwa kugira ngo ufashe umuryango w'abanditsi ba porogaramu bakoresha Ikinyarwanda.
 
 ## License
 
-MIT open source license. You can use, copy, modify, distribute, sublicense, and sell copies under the terms in [LICENSE](LICENSE).
+MIT open source license. Ushobora gukoresha, gukoporora, guhindura, gusangiza, gutanga sublicense, no kugurisha kopi ukurikije ibiri muri [LICENSE](LICENSE).

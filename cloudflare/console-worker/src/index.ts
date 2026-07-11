@@ -1,5 +1,6 @@
 const REPO_URL = "https://github.com/DannyIRUMVA/gihanga-command-line-interface.git";
-const INSTALL_SCRIPT = `#!/usr/bin/env bash
+
+const SHELL_INSTALL_SCRIPT = `#!/usr/bin/env bash
 set -euo pipefail
 
 REPO_URL="${REPO_URL}"
@@ -38,8 +39,46 @@ echo "Gihanga CLI installed successfully."
 echo "Run: gihanga --help"
 `;
 
+const POWERSHELL_INSTALL_SCRIPT = `$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+$RepoUrl = "${REPO_URL}"
+$InstallDir = if ($env:GIHANGA_INSTALL_DIR) { $env:GIHANGA_INSTALL_DIR } else { Join-Path $HOME ".gihanga-cli" }
+
+function Require-Command($Name) {
+	if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
+		throw "'$Name' is required but was not found. Install Git, Node.js, and npm, then run this script again."
+	}
+}
+
+Require-Command git
+Require-Command node
+Require-Command npm
+
+if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
+	Write-Host "Updating Gihanga CLI in $InstallDir"
+	git -C $InstallDir pull --ff-only
+} elseif (Test-Path -LiteralPath $InstallDir) {
+	throw "$InstallDir exists but is not a git repository. Set GIHANGA_INSTALL_DIR to another path or remove that folder."
+} else {
+	Write-Host "Installing Gihanga CLI into $InstallDir"
+	git clone $RepoUrl $InstallDir
+}
+
+Set-Location $InstallDir
+npm install --ignore-scripts
+npm run build
+Push-Location "packages/coding-agent"
+npm link
+Pop-Location
+
+Write-Host ""
+Write-Host "Gihanga CLI installed successfully."
+Write-Host "Run: gihanga --help"
+`;
+
 const HOME_HTML = `<!doctype html>
-<html lang="en">
+<html lang="rw">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -57,15 +96,17 @@ const HOME_HTML = `<!doctype html>
   <main>
     <pre>┌──────────────────────────────┐
 │          Gihanga CLI          │
-│  Kinyarwanda-first AI helper  │
+│ Umufasha wa AI mu Kinyarwanda │
 └───────────────┬──────────────┘
                 │
                 ▼
-        curl | bash install</pre>
+        install kuri terminal</pre>
     <h1>Gihanga CLI</h1>
-    <p class="muted">Kinyarwanda-first AI coding assistant for the terminal.</p>
-    <h2>Install</h2>
+    <p class="muted">Umufasha wa AI mu kwandika kode muri terminal, ushyira Ikinyarwanda imbere.</p>
+    <h2>Linux / macOS</h2>
     <pre>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</pre>
+    <h2>Windows PowerShell</h2>
+    <pre>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</pre>
     <p><a href="${REPO_URL.replace(".git", "")}">GitHub repository</a></p>
   </main>
 </body>
@@ -82,8 +123,13 @@ export default {
 	fetch(request: Request): Response {
 		const url = new URL(request.url);
 		if (url.pathname === "/install.sh") {
-			return withHeaders(INSTALL_SCRIPT, {
+			return withHeaders(SHELL_INSTALL_SCRIPT, {
 				headers: { "Content-Type": "text/x-shellscript; charset=utf-8" },
+			});
+		}
+		if (url.pathname === "/install.ps1") {
+			return withHeaders(POWERSHELL_INSTALL_SCRIPT, {
+				headers: { "Content-Type": "text/plain; charset=utf-8" },
 			});
 		}
 		if (url.pathname === "/" || url.pathname === "/index.html") {
