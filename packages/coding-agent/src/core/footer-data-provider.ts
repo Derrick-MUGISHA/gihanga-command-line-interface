@@ -1,5 +1,6 @@
 import { type ExecFileException, execFile, spawnSync } from "child_process";
 import { existsSync, type FSWatcher, readFileSync, type Stats, statSync, unwatchFile, watchFile } from "fs";
+import { get } from "https";
 import { dirname, join, resolve } from "path";
 import { closeWatcher, FS_WATCH_RETRY_DELAY_MS, watchWithErrorHandler } from "../utils/fs-watch.ts";
 
@@ -92,6 +93,36 @@ function shouldPollGitHead(repoDir: string): boolean {
 	return isWslEnvironment() && isWindowsMountedRepoPath(repoDir);
 }
 
+function fetchKigaliWeather(timeoutMs: number): Promise<string | null> {
+	return new Promise((resolvePromise) => {
+		const request = get("https://wttr.in/Kigali?format=%t+%c", { timeout: timeoutMs }, (response) => {
+			if (response.statusCode !== 200) {
+				response.resume();
+				resolvePromise(null);
+				return;
+			}
+
+			let body = "";
+			response.setEncoding("utf8");
+			response.on("data", (chunk: string) => {
+				body += chunk;
+			});
+			response.on("end", () => {
+				const normalized = body.replace(/^\+/, "").replace(/\s+/g, " ").trim();
+				resolvePromise(normalized ? `Kigali ${normalized} ✈` : null);
+			});
+		});
+
+		request.on("timeout", () => {
+			request.destroy();
+			resolvePromise(null);
+		});
+		request.on("error", () => {
+			resolvePromise(null);
+		});
+	});
+}
+
 /**
  * Provides git branch and extension statuses - data not otherwise accessible to extensions.
  * Token stats, model info available via ctx.sessionManager and ctx.model.
@@ -99,6 +130,8 @@ function shouldPollGitHead(repoDir: string): boolean {
 export class FooterDataProvider {
 	private cwd: string;
 	private static readonly WATCH_DEBOUNCE_MS = 500;
+	private static readonly WEATHER_REFRESH_MS = 15 * 60 * 1000;
+	private static readonly WEATHER_TIMEOUT_MS = 2500;
 
 	private extensionStatuses = new Map<string, string>();
 	private cachedBranch: string | null | undefined = undefined;
@@ -111,8 +144,10 @@ export class FooterDataProvider {
 	private reftableTablesListPath: string | null = null;
 	private branchChangeCallbacks = new Set<() => void>();
 	private availableProviderCount = 0;
+	private kigaliWeather: string | null = null;
 	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 	private gitWatcherRetryTimer: ReturnType<typeof setTimeout> | null = null;
+	private weatherTimer: ReturnType<typeof setTimeout> | null = null;
 	private refreshInFlight = false;
 	private refreshPending = false;
 	private disposed = false;
@@ -121,6 +156,7 @@ export class FooterDataProvider {
 		this.cwd = cwd;
 		this.gitPaths = findGitPaths(cwd);
 		this.setupGitWatcher();
+		this.scheduleWeatherRefresh(0);
 	}
 
 	/** Current git branch, null if not in repo, "detached" if detached HEAD */
@@ -161,6 +197,10 @@ export class FooterDataProvider {
 		return this.availableProviderCount;
 	}
 
+	getKigaliWeather(): string | null {
+		return this.kigaliWeather;
+	}
+
 	/** Internal: update available provider count */
 	setAvailableProviderCount(count: number): void {
 		this.availableProviderCount = count;
@@ -190,8 +230,38 @@ export class FooterDataProvider {
 			clearTimeout(this.refreshTimer);
 			this.refreshTimer = null;
 		}
+		if (this.weatherTimer) {
+			clearTimeout(this.weatherTimer);
+			this.weatherTimer = null;
+		}
 		this.clearGitWatchers();
 		this.branchChangeCallbacks.clear();
+	}
+
+	private scheduleWeatherRefresh(delayMs: number): void {
+		if (this.disposed || process.env.NODE_ENV === "test") return;
+		if (this.weatherTimer) {
+			clearTimeout(this.weatherTimer);
+		}
+		this.weatherTimer = setTimeout(() => {
+			this.weatherTimer = null;
+			void this.refreshKigaliWeatherAsync();
+		}, delayMs);
+	}
+
+	private async refreshKigaliWeatherAsync(): Promise<void> {
+		if (this.disposed) return;
+		try {
+			const weather = await fetchKigaliWeather(FooterDataProvider.WEATHER_TIMEOUT_MS);
+			if (weather && weather !== this.kigaliWeather) {
+				this.kigaliWeather = weather;
+				this.notifyBranchChange();
+			}
+		} catch {
+			// Weather is decorative. Keep the footer quiet on network failures.
+		} finally {
+			this.scheduleWeatherRefresh(FooterDataProvider.WEATHER_REFRESH_MS);
+		}
 	}
 
 	private notifyBranchChange(): void {
@@ -384,5 +454,5 @@ export class FooterDataProvider {
 /** Read-only view for extensions - excludes setExtensionStatus, setAvailableProviderCount and dispose */
 export type ReadonlyFooterDataProvider = Pick<
 	FooterDataProvider,
-	"getGitBranch" | "getExtensionStatuses" | "getAvailableProviderCount" | "onBranchChange"
+	"getGitBranch" | "getExtensionStatuses" | "getAvailableProviderCount" | "getKigaliWeather" | "onBranchChange"
 >;

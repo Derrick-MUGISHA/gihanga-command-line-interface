@@ -60,11 +60,12 @@ function createSession(options: {
 	return session as unknown as AgentSession;
 }
 
-function createFooterData(providerCount: number): ReadonlyFooterDataProvider {
+function createFooterData(providerCount: number, weather: string | null = null): ReadonlyFooterDataProvider {
 	const provider = {
 		getGitBranch: () => "main",
 		getExtensionStatuses: () => new Map<string, string>(),
 		getAvailableProviderCount: () => providerCount,
+		getKigaliWeather: () => weather,
 		onBranchChange: (callback: () => void) => {
 			void callback;
 			return () => {};
@@ -140,5 +141,25 @@ describe("FooterComponent width handling", () => {
 
 		const statsLine = stripAnsi(footer.render(120)[1]);
 		expect(statsLine).toContain("CH25.0%");
+	});
+
+	it("shows cost in RWF suffix form and Kigali weather on the stats row", () => {
+		const session = createSession({
+			sessionName: "",
+			usage: {
+				input: 7_800,
+				output: 159,
+				cacheRead: 0,
+				cacheWrite: 0,
+				cost: { total: 0.009 },
+			},
+		});
+		const footer = new FooterComponent(session, createFooterData(1, "Kigali 24°C ☀"));
+
+		const statsLine = stripAnsi(footer.render(120)[1]);
+
+		expect(statsLine).toContain("0.009 RWF");
+		expect(statsLine).toContain("Kigali 24°C ☀");
+		expect(statsLine).not.toContain("$0.009");
 	});
 });
