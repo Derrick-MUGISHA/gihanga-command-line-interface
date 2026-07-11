@@ -816,13 +816,19 @@ export class InteractiveMode {
 				"dim",
 				`Press ${keyText("app.tools.expand")} to show full startup help and loaded resources.`,
 			);
+			const rwandaVector = [
+				theme.fg("accent", "      /\\        ") + theme.fg("warning", "✦"),
+				theme.fg("accent", " ____/  \\____   ") + theme.fg("success", "Rwanda"),
+				theme.fg("success", "|  hills + sky |  ") + theme.fg("warning", "sun"),
+				theme.fg("success", "‾‾‾‾‾‾‾‾‾‾‾‾‾"),
+			].join("\n");
 			const onboarding = theme.fg(
 				"dim",
-				`Pi can explain its own features and look up its docs. Ask it how to use or extend Pi.`,
+				`Gihanga can explain its features and help with kode, providers, and ubumeny.`,
 			);
 			this.builtInHeader = new ExpandableText(
-				() => `${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${onboarding}`,
-				() => `${logo}\n${expandedInstructions}\n\n${onboarding}`,
+				() => `${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${rwandaVector}\n${onboarding}`,
+				() => `${logo}\n${expandedInstructions}\n\n${rwandaVector}\n${onboarding}`,
 				this.getStartupExpansionState(),
 				1,
 				0,
@@ -1543,7 +1549,7 @@ export class InteractiveMode {
 					formatPackagePath: (item) => this.getShortPath(item.path, item.sourceInfo),
 				});
 				const skillCompactList = formatCompactList(skills.map((skill) => skill.name));
-				addLoadedSection("Skills", skillCompactList, skillList);
+				addLoadedSection("Ubumeny", skillCompactList, skillList);
 			}
 
 			const templates = this.session.promptTemplates;
