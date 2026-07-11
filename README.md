@@ -87,29 +87,6 @@ Install inashyiramo ubumenyi bwa Gihanga n'amagambo y'Ikinyarwanda muri `~/.giha
 
 - `skills/gihanga-community/SKILL.md`
 - `data/kinyarwanda-keywords.json`
-- `data/community-translation-list.csv`
-- `data/kinyarwanda-dataset-sources.json`
-- `scripts/import-mbaza-nlp.mjs`
-
-### Install na Mbaza NLP dataset
-
-Mbaza NLP raw dataset ni nini, ntabwo tuyishyira muri GitHub repo. Ushobora kuyikurura mu gihe cya install ukoresheje flag:
-
-```bash
-GIHANGA_INSTALL_MBAZA_NLP=1 curl -fsSL https://console.upskillsafrica.org/install.sh | bash
-```
-
-Niba ushaka metadata gusa, nta parquet download:
-
-```bash
-GIHANGA_INSTALL_MBAZA_NLP=1 GIHANGA_MBAZA_METADATA_ONLY=1 curl -fsSL https://console.upskillsafrica.org/install.sh | bash
-```
-
-Ku dataset gated nka `mbazaNLP/kinyarwanda_monolingual_v01.1`, banza wemere terms kuri Hugging Face, hanyuma ukoreshe `HF_TOKEN`:
-
-```bash
-HF_TOKEN=your_token GIHANGA_INSTALL_MBAZA_NLP=1 GIHANGA_MBAZA_NLP_DATASET=mbazaNLP/kinyarwanda_monolingual_v01.1 curl -fsSL https://console.upskillsafrica.org/install.sh | bash
-```
 
 ## Manual install
 
