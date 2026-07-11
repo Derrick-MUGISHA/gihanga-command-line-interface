@@ -37,6 +37,26 @@ New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "data") | 
 Copy-Item -Recurse -Force (Join-Path $InstallDir "resources/gihanga/agent/skills/gihanga-community") (Join-Path $GihangaAgentDir "skills")
 Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/kinyarwanda-keywords.json") (Join-Path $GihangaAgentDir "data/kinyarwanda-keywords.json")
 
+if ($env:AZURE_OPENAI_API_KEY -and ($env:AZURE_OPENAI_BASE_URL -or $env:AZURE_OPENAI_RESOURCE_NAME)) {
+	$AuthPath = Join-Path $GihangaAgentDir "auth.json"
+	$Auth = if (Test-Path -LiteralPath $AuthPath) { Get-Content -Raw $AuthPath | ConvertFrom-Json -AsHashtable } else { @{} }
+	$ResourceName = $env:AZURE_OPENAI_RESOURCE_NAME
+	if (-not $ResourceName -and $env:AZURE_OPENAI_BASE_URL) {
+		try { $ResourceName = ([Uri]$env:AZURE_OPENAI_BASE_URL).Host.Split('.')[0] } catch { $ResourceName = $null }
+	}
+	$BaseUrl = if ($env:AZURE_OPENAI_BASE_URL) { $env:AZURE_OPENAI_BASE_URL } elseif ($ResourceName) { "https://$ResourceName.openai.azure.com" } else { $null }
+	$AzureEnv = @{}
+	if ($BaseUrl) { $AzureEnv["AZURE_OPENAI_BASE_URL"] = $BaseUrl }
+	if ($ResourceName) { $AzureEnv["AZURE_OPENAI_RESOURCE_NAME"] = $ResourceName }
+	if ($env:AZURE_OPENAI_API_VERSION) { $AzureEnv["AZURE_OPENAI_API_VERSION"] = $env:AZURE_OPENAI_API_VERSION }
+	$Auth["azure-openai-responses"] = @{
+		type = "api_key"
+		key = "AZURE_OPENAI_API_KEY"
+		env = $AzureEnv
+	}
+	$Auth | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 -Path $AuthPath
+}
+
 Write-Host ""
 Write-Host "Gihanga CLI installed successfully."
 Write-Host "Kinyarwanda keyword data installed in: $GihangaAgentDir"

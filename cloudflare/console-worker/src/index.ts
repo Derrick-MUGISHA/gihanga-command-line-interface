@@ -39,6 +39,31 @@ mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data"
 cp -R "$INSTALL_DIR/resources/gihanga/agent/skills/gihanga-community" "$GIHANGA_AGENT_DIR/skills/"
 cp "$INSTALL_DIR/resources/gihanga/agent/data/kinyarwanda-keywords.json" "$GIHANGA_AGENT_DIR/data/kinyarwanda-keywords.json"
 
+if [ -n "\${AZURE_OPENAI_API_KEY:-}" ] && { [ -n "\${AZURE_OPENAI_BASE_URL:-}" ] || [ -n "\${AZURE_OPENAI_RESOURCE_NAME:-}" ]; }; then
+	AUTH_PATH="$GIHANGA_AGENT_DIR/auth.json" node <<'JS'
+const fs = require("fs");
+const path = process.env.AUTH_PATH;
+const baseFromResource = (name) => "https://" + name + ".openai.azure.com";
+const resourceFromBase = (baseUrl) => {
+	try { return new URL(baseUrl).hostname.split(".")[0] || undefined; } catch { return undefined; }
+};
+const current = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, "utf8") || "{}") : {};
+const resourceName = process.env.AZURE_OPENAI_RESOURCE_NAME || resourceFromBase(process.env.AZURE_OPENAI_BASE_URL || "");
+const baseUrl = process.env.AZURE_OPENAI_BASE_URL || (resourceName ? baseFromResource(resourceName) : undefined);
+current["azure-openai-responses"] = {
+	type: "api_key",
+	key: "AZURE_OPENAI_API_KEY",
+	env: {
+		...(baseUrl ? { AZURE_OPENAI_BASE_URL: baseUrl } : {}),
+		...(resourceName ? { AZURE_OPENAI_RESOURCE_NAME: resourceName } : {}),
+		...(process.env.AZURE_OPENAI_API_VERSION ? { AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION } : {}),
+	},
+};
+fs.mkdirSync(require("path").dirname(path), { recursive: true, mode: 0o700 });
+fs.writeFileSync(path, JSON.stringify(current, null, 2), { mode: 0o600 });
+JS
+fi
+
 echo ""
 echo "Gihanga CLI installed successfully."
 echo "Kinyarwanda keyword data installed in: $GIHANGA_AGENT_DIR"
@@ -83,6 +108,26 @@ New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "skills") 
 New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "data") | Out-Null
 Copy-Item -Recurse -Force (Join-Path $InstallDir "resources/gihanga/agent/skills/gihanga-community") (Join-Path $GihangaAgentDir "skills")
 Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/kinyarwanda-keywords.json") (Join-Path $GihangaAgentDir "data/kinyarwanda-keywords.json")
+
+if ($env:AZURE_OPENAI_API_KEY -and ($env:AZURE_OPENAI_BASE_URL -or $env:AZURE_OPENAI_RESOURCE_NAME)) {
+	$AuthPath = Join-Path $GihangaAgentDir "auth.json"
+	$Auth = if (Test-Path -LiteralPath $AuthPath) { Get-Content -Raw $AuthPath | ConvertFrom-Json -AsHashtable } else { @{} }
+	$ResourceName = $env:AZURE_OPENAI_RESOURCE_NAME
+	if (-not $ResourceName -and $env:AZURE_OPENAI_BASE_URL) {
+		try { $ResourceName = ([Uri]$env:AZURE_OPENAI_BASE_URL).Host.Split('.')[0] } catch { $ResourceName = $null }
+	}
+	$BaseUrl = if ($env:AZURE_OPENAI_BASE_URL) { $env:AZURE_OPENAI_BASE_URL } elseif ($ResourceName) { "https://$ResourceName.openai.azure.com" } else { $null }
+	$AzureEnv = @{}
+	if ($BaseUrl) { $AzureEnv["AZURE_OPENAI_BASE_URL"] = $BaseUrl }
+	if ($ResourceName) { $AzureEnv["AZURE_OPENAI_RESOURCE_NAME"] = $ResourceName }
+	if ($env:AZURE_OPENAI_API_VERSION) { $AzureEnv["AZURE_OPENAI_API_VERSION"] = $env:AZURE_OPENAI_API_VERSION }
+	$Auth["azure-openai-responses"] = @{
+		type = "api_key"
+		key = "AZURE_OPENAI_API_KEY"
+		env = $AzureEnv
+	}
+	$Auth | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 -Path $AuthPath
+}
 
 Write-Host ""
 Write-Host "Gihanga CLI installed successfully."

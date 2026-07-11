@@ -336,6 +336,19 @@ function formatLoginProviderCompletionDescription(provider: LoginProviderComplet
 	return provider.name === provider.id ? authTypes : `${provider.name} · ${authTypes}`;
 }
 
+function buildAzureOpenAIBaseUrl(resourceName: string): string {
+	return `https://${resourceName}.openai.azure.com`;
+}
+
+function getAzureOpenAIResourceNameFromBaseUrl(baseUrl: string): string | undefined {
+	try {
+		const resourceName = new URL(baseUrl).hostname.split(".")[0]?.trim();
+		return resourceName || undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 /**
  * Options for InteractiveMode initialization.
  */
@@ -5145,8 +5158,13 @@ export class InteractiveMode {
 			if (!apiKey) {
 				throw new Error("API key cannot be empty.");
 			}
+			const env = await this.getApiKeyCredentialEnv(providerId, dialog);
 
-			this.session.modelRegistry.authStorage.set(providerId, { type: "api_key", key: apiKey });
+			this.session.modelRegistry.authStorage.set(providerId, {
+				type: "api_key",
+				key: apiKey,
+				...(env ? { env } : {}),
+			});
 
 			restoreEditor();
 			await this.completeProviderAuthentication(providerId, providerName, "api_key", previousModel);
@@ -5157,6 +5175,32 @@ export class InteractiveMode {
 				this.showError(`Failed to save API key for ${providerName}: ${errorMsg}`);
 			}
 		}
+	}
+
+	private async getApiKeyCredentialEnv(
+		providerId: string,
+		dialog: LoginDialogComponent,
+	): Promise<Record<string, string> | undefined> {
+		if (providerId !== "azure-openai-responses") {
+			return undefined;
+		}
+
+		const value = (
+			await dialog.showPrompt(
+				"Enter Azure OpenAI base URL or resource name (example: https://my-resource.openai.azure.com or my-resource):",
+			)
+		).trim();
+		if (!value) {
+			throw new Error("Azure OpenAI base URL or resource name is required.");
+		}
+
+		const isUrl = /^https?:\/\//i.test(value);
+		const baseUrl = isUrl ? value : buildAzureOpenAIBaseUrl(value);
+		const resourceName = isUrl ? getAzureOpenAIResourceNameFromBaseUrl(value) : value;
+		return {
+			AZURE_OPENAI_BASE_URL: baseUrl,
+			...(resourceName ? { AZURE_OPENAI_RESOURCE_NAME: resourceName } : {}),
+		};
 	}
 
 	private showOAuthLoginSelect(dialog: LoginDialogComponent, prompt: OAuthSelectPrompt): Promise<string | undefined> {

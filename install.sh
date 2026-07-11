@@ -37,6 +37,31 @@ mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data"
 cp -R "$INSTALL_DIR/resources/gihanga/agent/skills/gihanga-community" "$GIHANGA_AGENT_DIR/skills/"
 cp "$INSTALL_DIR/resources/gihanga/agent/data/kinyarwanda-keywords.json" "$GIHANGA_AGENT_DIR/data/kinyarwanda-keywords.json"
 
+if [ -n "${AZURE_OPENAI_API_KEY:-}" ] && { [ -n "${AZURE_OPENAI_BASE_URL:-}" ] || [ -n "${AZURE_OPENAI_RESOURCE_NAME:-}" ]; }; then
+	AUTH_PATH="$GIHANGA_AGENT_DIR/auth.json" node <<'JS'
+const fs = require("fs");
+const path = process.env.AUTH_PATH;
+const baseFromResource = (name) => `https://${name}.openai.azure.com`;
+const resourceFromBase = (baseUrl) => {
+	try { return new URL(baseUrl).hostname.split(".")[0] || undefined; } catch { return undefined; }
+};
+const current = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, "utf8") || "{}") : {};
+const resourceName = process.env.AZURE_OPENAI_RESOURCE_NAME || resourceFromBase(process.env.AZURE_OPENAI_BASE_URL || "");
+const baseUrl = process.env.AZURE_OPENAI_BASE_URL || (resourceName ? baseFromResource(resourceName) : undefined);
+current["azure-openai-responses"] = {
+	type: "api_key",
+	key: "AZURE_OPENAI_API_KEY",
+	env: {
+		...(baseUrl ? { AZURE_OPENAI_BASE_URL: baseUrl } : {}),
+		...(resourceName ? { AZURE_OPENAI_RESOURCE_NAME: resourceName } : {}),
+		...(process.env.AZURE_OPENAI_API_VERSION ? { AZURE_OPENAI_API_VERSION: process.env.AZURE_OPENAI_API_VERSION } : {}),
+	},
+};
+fs.mkdirSync(require("path").dirname(path), { recursive: true, mode: 0o700 });
+fs.writeFileSync(path, JSON.stringify(current, null, 2), { mode: 0o600 });
+JS
+fi
+
 echo ""
 echo "Gihanga CLI installed successfully."
 echo "Kinyarwanda keyword data installed in: $GIHANGA_AGENT_DIR"
