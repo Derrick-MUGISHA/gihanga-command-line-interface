@@ -78,37 +78,177 @@ Write-Host "Run: gihanga --help"
 `;
 
 const HOME_HTML = `<!doctype html>
-<html lang="rw">
+<html lang="rw" class="scroll-smooth">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gihanga CLI</title>
-  <style>
-    :root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #070a12; color: #f4f7fb; }
-    main { width: min(920px, calc(100% - 32px)); }
-    pre { overflow-x: auto; padding: 20px; border: 1px solid #243049; border-radius: 14px; background: #0e1526; }
-    a { color: #86efac; }
-    .muted { color: #a8b3c7; }
-  </style>
+  <meta name="description" content="Gihanga CLI ni umufasha wa AI mu kwandika kode muri terminal, ushyira Ikinyarwanda imbere." />
+  <title>Gihanga CLI - Kinyarwanda-first AI coding assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gihanga: {
+              ink: '#07111f',
+              green: '#22c55e',
+              cyan: '#22d3ee',
+              gold: '#fbbf24'
+            }
+          },
+          boxShadow: {
+            glow: '0 0 80px rgba(34, 197, 94, 0.22)'
+          }
+        }
+      }
+    };
+  </script>
 </head>
-<body>
-  <main>
-    <pre>┌──────────────────────────────┐
-│          Gihanga CLI          │
-│ Umufasha wa AI mu Kinyarwanda │
-└───────────────┬──────────────┘
-                │
-                ▼
-        install kuri terminal</pre>
-    <h1>Gihanga CLI</h1>
-    <p class="muted">Umufasha wa AI mu kwandika kode muri terminal, ushyira Ikinyarwanda imbere.</p>
-    <h2>Linux / macOS</h2>
-    <pre>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</pre>
-    <h2>Windows PowerShell</h2>
-    <pre>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</pre>
-    <p><a href="${REPO_URL.replace(".git", "")}">GitHub repository</a></p>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased">
+  <div class="pointer-events-none fixed inset-0 overflow-hidden">
+    <div class="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-emerald-500/20 blur-3xl"></div>
+    <div class="absolute right-0 top-48 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl"></div>
+    <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl"></div>
+  </div>
+
+  <header class="relative mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
+    <a href="/" class="flex items-center gap-3">
+      <span class="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-400 text-slate-950 shadow-glow">
+        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"></path>
+          <path d="M12 8v8"></path>
+          <path d="m8.5 10 3.5-2 3.5 2"></path>
+        </svg>
+      </span>
+      <div>
+        <p class="text-lg font-bold tracking-tight">Gihanga CLI</p>
+        <p class="text-xs text-slate-400">Kinyarwanda-first terminal AI</p>
+      </div>
+    </a>
+    <nav class="hidden items-center gap-6 text-sm text-slate-300 md:flex">
+      <a class="hover:text-white" href="#install">Kwinjiza</a>
+      <a class="hover:text-white" href="#features">Ibyo ikora</a>
+      <a class="hover:text-white" href="${REPO_URL.replace(".git", "")}">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="relative">
+    <section class="mx-auto grid max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
+      <div>
+        <div class="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-200">
+          <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20 6 9 17l-5-5"></path>
+          </svg>
+          Ikoreshwa kuri Linux, macOS na Windows
+        </div>
+        <h1 class="max-w-4xl text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+          Andika kode muri terminal ukoresheje <span class="bg-gradient-to-r from-emerald-300 via-cyan-300 to-amber-200 bg-clip-text text-transparent">Gihanga CLI</span>.
+        </h1>
+        <p class="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
+          Umufasha wa AI wubakiwe developers bakoresha Ikinyarwanda: gusoma kode, kuyisobanura, kuyihindura, gukoresha bash, no gukomeza ibiganiro byawe muri terminal.
+        </p>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <a href="#install" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-300">
+            Tangira kwinjiza
+            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>
+            </svg>
+          </a>
+          <a href="${REPO_URL.replace(".git", "")}" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-white/5 px-6 py-3 font-semibold text-white transition hover:bg-white/10">
+            Reba kuri GitHub
+          </a>
+        </div>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-4 shadow-2xl backdrop-blur">
+        <div class="mb-3 flex items-center gap-2 px-2">
+          <span class="h-3 w-3 rounded-full bg-red-400"></span>
+          <span class="h-3 w-3 rounded-full bg-amber-400"></span>
+          <span class="h-3 w-3 rounded-full bg-emerald-400"></span>
+          <span class="ml-3 text-xs text-slate-400">terminal</span>
+        </div>
+        <pre class="overflow-x-auto rounded-2xl bg-slate-950 p-6 text-sm leading-7 text-slate-200"><code>$ gihanga
+
+/settings    igenamiterere
+/kwinjira    login ya provider
+/continue    komeza ikiganiro
+/sohoka      sohoka muri Gihanga
+
+AI: Reka dusome iyi poroje...</code></pre>
+      </div>
+    </section>
+
+    <section id="install" class="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+      <div class="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <p class="text-sm font-semibold uppercase tracking-widest text-emerald-300">Install</p>
+          <h2 class="mt-2 text-3xl font-black text-white sm:text-4xl">Kwinjiza kuri OS yawe</h2>
+        </div>
+      </div>
+      <div class="grid gap-5 lg:grid-cols-2">
+        <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+          <div class="mb-4 flex items-center gap-3">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-cyan-400/15 text-cyan-200">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M8 21h8"></path><path d="M12 18v3"></path>
+              </svg>
+            </span>
+            <div>
+              <h3 class="text-xl font-bold text-white">Linux / macOS</h3>
+              <p class="text-sm text-slate-400">Bash installer</p>
+            </div>
+          </div>
+          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre>
+        </article>
+
+        <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+          <div class="mb-4 flex items-center gap-3">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-blue-400/15 text-blue-200">
+              <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 5.5 10 4v7H3V5.5Z"></path><path d="M12 3.5 21 2v9h-9V3.5Z"></path><path d="M3 13h7v7l-7-1.5V13Z"></path><path d="M12 13h9v9l-9-1.5V13Z"></path>
+              </svg>
+            </span>
+            <div>
+              <h3 class="text-xl font-bold text-white">Windows PowerShell</h3>
+              <p class="text-sm text-slate-400">Native Windows installer</p>
+            </div>
+          </div>
+          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <section id="features" class="mx-auto grid max-w-7xl gap-5 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+      <article class="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+        <svg viewBox="0 0 24 24" class="mb-4 h-8 w-8 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h10"></path></svg>
+        <h3 class="font-bold text-white">Soma kode</h3>
+        <p class="mt-2 text-sm text-slate-400">Sobanukirwa files na project structure vuba.</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+        <svg viewBox="0 0 24 24" class="mb-4 h-8 w-8 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 20 9-16"></path><path d="m3 4 9 16"></path><path d="M7 12h10"></path></svg>
+        <h3 class="font-bold text-white">Hindura kode</h3>
+        <p class="mt-2 text-sm text-slate-400">Edits zikorwa muri repo yawe, zigenzurwa na checks.</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+        <svg viewBox="0 0 24 24" class="mb-4 h-8 w-8 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"></path><path d="M12 19h8"></path></svg>
+        <h3 class="font-bold text-white">Koresha terminal</h3>
+        <p class="mt-2 text-sm text-slate-400">Run commands, tests, builds, na scripts.</p>
+      </article>
+      <article class="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+        <svg viewBox="0 0 24 24" class="mb-4 h-8 w-8 text-violet-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"></path><path d="M3 12h18"></path><path d="m5 5 14 14"></path><path d="m19 5-14 14"></path></svg>
+        <h3 class="font-bold text-white">Kinyarwanda-first</h3>
+        <p class="mt-2 text-sm text-slate-400">Slash commands nka /kwinjira, /continue, /sohoka.</p>
+      </article>
+    </section>
   </main>
+
+  <footer class="relative mx-auto max-w-7xl px-6 py-10 text-sm text-slate-500 lg:px-8">
+    <div class="flex flex-col justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
+      <p>Gihanga CLI - UpSkills Africa console.</p>
+      <a class="text-slate-300 hover:text-white" href="${REPO_URL.replace(".git", "")}">GitHub repository</a>
+    </div>
+  </footer>
 </body>
 </html>`;
 
