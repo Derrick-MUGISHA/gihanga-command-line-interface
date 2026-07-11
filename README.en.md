@@ -50,6 +50,11 @@ $env:GIHANGA_INSTALL_DIR="$HOME\Tools\gihanga-cli"; iwr https://console.upskills
 
 The installer clones or updates Gihanga CLI in `~/.gihanga-cli`, builds it, and links the `gihanga` command for the current user.
 
+The installer also seeds Gihanga's Kinyarwanda knowledge pack into `~/.gihanga/agent`:
+
+- `skills/gihanga-community/SKILL.md`
+- `data/kinyarwanda-keywords.json`
+
 ## Manual install
 
 ```bash

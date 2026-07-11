@@ -53,7 +53,7 @@ Urubuga: https://console.upskillsafrica.org
 - Git
 - Credential ya AI provider imwe ishyigikiwe, cyangwa kwinjira ukoresheje CLI
 
-## Kwinjiza kuri Linux / macOS
+## Install kuri Linux / macOS
 
 Koresha iyi command:
 
@@ -67,7 +67,7 @@ Niba ushaka indi folder:
 curl -fsSL https://console.upskillsafrica.org/install.sh | GIHANGA_INSTALL_DIR="$HOME/Tools/gihanga-cli" bash
 ```
 
-## Kwinjiza kuri Windows
+## Install kuri Windows
 
 Koresha PowerShell:
 
@@ -83,7 +83,12 @@ $env:GIHANGA_INSTALL_DIR="$HOME\Tools\gihanga-cli"; iwr https://console.upskills
 
 Iyi installer ishyira cyangwa ivugurura Gihanga CLI muri `~/.gihanga-cli`, ikayubaka, hanyuma igahuza command `gihanga` kuri uyu mukoresha.
 
-## Kwinjiza manually
+Install inashyiramo ubumenyi bwa Gihanga n'amagambo y'Ikinyarwanda muri `~/.gihanga/agent`:
+
+- `skills/gihanga-community/SKILL.md`
+- `data/kinyarwanda-keywords.json`
+
+## Manual install
 
 ```bash
 git clone https://github.com/DannyIRUMVA/gihanga-command-line-interface.git
@@ -186,7 +191,7 @@ Kuri Windows development:
 ## Icyitonderwa
 
 - Command nyamukuru ni `gihanga`.
-- Flags za command ziguma mu Cyongereza kugira ngo compatibility ikomeze, ariko help text ni Kinyarwanda-first.
+- Command syntax nka `install` iguma mu Cyongereza kugira ngo copy-paste compatibility ikomeze, ariko help text n'inyandiko rusange bikoresha Ikinyarwanda-first.
 - Uyu mushinga uhindurwa kugira ngo ufashe umuryango w'abanditsi ba porogaramu bakoresha Ikinyarwanda.
 
 ## License

@@ -6,7 +6,7 @@ $InstallDir = if ($env:GIHANGA_INSTALL_DIR) { $env:GIHANGA_INSTALL_DIR } else { 
 
 function Require-Command($Name) {
 	if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
-		throw "'$Name' is required but was not found. Install Git, Node.js, and npm, then run this script again."
+		throw "'$Name' irakenewe ariko ntiyabonetse. Banza winjize Git, Node.js, na npm, hanyuma wongere ukoreshe iyi script."
 	}
 }
 
@@ -15,7 +15,7 @@ Require-Command node
 Require-Command npm
 
 if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-	Write-Host "Updating Gihanga CLI in $InstallDir"
+	Write-Host "Kuvugurura Gihanga CLI muri $InstallDir"
 	git -C $InstallDir pull --ff-only
 } elseif (Test-Path -LiteralPath $InstallDir) {
 	throw "$InstallDir exists but is not a git repository. Set GIHANGA_INSTALL_DIR to another path or remove that folder."
@@ -31,6 +31,13 @@ Push-Location "packages/coding-agent"
 npm link
 Pop-Location
 
+$GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else { Join-Path $HOME ".gihanga/agent" }
+New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "skills") | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "data") | Out-Null
+Copy-Item -Recurse -Force (Join-Path $InstallDir "resources/gihanga/agent/skills/gihanga-community") (Join-Path $GihangaAgentDir "skills")
+Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/kinyarwanda-keywords.json") (Join-Path $GihangaAgentDir "data/kinyarwanda-keywords.json")
+
 Write-Host ""
 Write-Host "Gihanga CLI installed successfully."
+Write-Host "Kinyarwanda keyword data installed in: $GihangaAgentDir"
 Write-Host "Run: gihanga --help"

@@ -34,8 +34,14 @@ npm install --ignore-scripts
 npm run build
 (cd packages/coding-agent && npm link)
 
+GIHANGA_AGENT_DIR="\${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
+mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data"
+cp -R "$INSTALL_DIR/resources/gihanga/agent/skills/gihanga-community" "$GIHANGA_AGENT_DIR/skills/"
+cp "$INSTALL_DIR/resources/gihanga/agent/data/kinyarwanda-keywords.json" "$GIHANGA_AGENT_DIR/data/kinyarwanda-keywords.json"
+
 echo ""
 echo "Gihanga CLI installed successfully."
+echo "Kinyarwanda keyword data installed in: $GIHANGA_AGENT_DIR"
 echo "Run: gihanga --help"
 `;
 
@@ -72,8 +78,15 @@ Push-Location "packages/coding-agent"
 npm link
 Pop-Location
 
+$GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else { Join-Path $HOME ".gihanga/agent" }
+New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "skills") | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "data") | Out-Null
+Copy-Item -Recurse -Force (Join-Path $InstallDir "resources/gihanga/agent/skills/gihanga-community") (Join-Path $GihangaAgentDir "skills")
+Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/kinyarwanda-keywords.json") (Join-Path $GihangaAgentDir "data/kinyarwanda-keywords.json")
+
 Write-Host ""
 Write-Host "Gihanga CLI installed successfully."
+Write-Host "Kinyarwanda keyword data installed in: $GihangaAgentDir"
 Write-Host "Run: gihanga --help"
 `;
 
@@ -85,6 +98,7 @@ const HOME_HTML = `<!doctype html>
   <meta name="description" content="Gihanga CLI ni umufasha wa AI mu kwandika kode muri terminal, ushyira Ikinyarwanda imbere." />
   <title>Gihanga CLI - Kinyarwanda-first AI coding assistant</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -127,7 +141,7 @@ const HOME_HTML = `<!doctype html>
       </div>
     </a>
     <nav class="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-      <a class="hover:text-white" href="#install">Kwinjiza</a>
+      <a class="hover:text-white" href="#install">Install</a>
       <a class="hover:text-white" href="#features">Ibyo ikora</a>
       <a class="hover:text-white" href="${REPO_URL.replace(".git", "")}">GitHub</a>
     </nav>
@@ -150,7 +164,7 @@ const HOME_HTML = `<!doctype html>
         </p>
         <div class="mt-8 flex flex-col gap-3 sm:flex-row">
           <a href="#install" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 font-semibold text-slate-950 shadow-glow transition hover:bg-emerald-300">
-            Tangira kwinjiza
+            Tangira install
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>
             </svg>
@@ -183,7 +197,7 @@ AI: Reka dusome iyi poroje...</code></pre>
       <div class="mb-8 flex items-end justify-between gap-4">
         <div>
           <p class="text-sm font-semibold uppercase tracking-widest text-emerald-300">Install</p>
-          <h2 class="mt-2 text-3xl font-black text-white sm:text-4xl">Kwinjiza kuri OS yawe</h2>
+          <h2 class="mt-2 text-3xl font-black text-white sm:text-4xl">Install kuri OS yawe</h2>
         </div>
       </div>
       <div class="grid gap-5 lg:grid-cols-2">
@@ -195,7 +209,7 @@ AI: Reka dusome iyi poroje...</code></pre>
               </svg>
             </span>
             <div>
-              <h3 class="text-xl font-bold text-white">Linux / macOS</h3>
+              <h3 class="text-xl font-bold text-white">🐧 🍎 Linux / macOS</h3>
               <p class="text-sm text-slate-400">Bash installer</p>
             </div>
           </div>
@@ -210,12 +224,42 @@ AI: Reka dusome iyi poroje...</code></pre>
               </svg>
             </span>
             <div>
-              <h3 class="text-xl font-bold text-white">Windows PowerShell</h3>
+              <h3 class="text-xl font-bold text-white">🪟 Windows PowerShell</h3>
               <p class="text-sm text-slate-400">Native Windows installer</p>
             </div>
           </div>
           <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
         </article>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+      <div class="rounded-[2rem] border border-emerald-400/20 bg-emerald-400/10 p-8 backdrop-blur">
+        <div class="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-300">Kinyarwanda data</p>
+            <h2 class="mt-2 text-3xl font-black text-white sm:text-4xl">Install izana ubumenyi bwa Gihanga.</h2>
+            <p class="mt-4 text-slate-300">Gihanga ishyiramo glossary ya Kinyarwanda muri <code class="rounded bg-slate-950 px-2 py-1 text-emerald-200">~/.gihanga/agent</code>: amagambo ya ICT, coding actions, slash commands, n'amagambo asanzwe yo gufasha AI gusobanura neza mu Kinyarwanda.</p>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+              <div class="mb-2 flex items-center gap-2 text-emerald-200"><i data-lucide="brain-circuit" class="h-5 w-5"></i><span class="font-semibold">ubwenge buhangano</span></div>
+              <p class="text-sm text-slate-400">AI terminology na technology words.</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+              <div class="mb-2 flex items-center gap-2 text-cyan-200"><i data-lucide="terminal-square" class="h-5 w-5"></i><span class="font-semibold">andika / soma</span></div>
+              <p class="text-sm text-slate-400">Coding verbs n'ibikorwa bya terminal.</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+              <div class="mb-2 flex items-center gap-2 text-amber-200"><i data-lucide="book-open-text" class="h-5 w-5"></i><span class="font-semibold">ijambo / igikoresho</span></div>
+              <p class="text-sm text-slate-400">Common vocabulary ikoreshwa mu bisobanuro.</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+              <div class="mb-2 flex items-center gap-2 text-violet-200"><i data-lucide="sparkles" class="h-5 w-5"></i><span class="font-semibold">kwinjira / sohoka</span></div>
+              <p class="text-sm text-slate-400">Slash commands zashyizwe mu Kinyarwanda.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -249,6 +293,9 @@ AI: Reka dusome iyi poroje...</code></pre>
       <a class="text-slate-300 hover:text-white" href="${REPO_URL.replace(".git", "")}">GitHub repository</a>
     </div>
   </footer>
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
 </html>`;
 
