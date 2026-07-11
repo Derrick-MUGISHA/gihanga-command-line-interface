@@ -35,7 +35,7 @@ $GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else {
 New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "skills") | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "data") | Out-Null
 Copy-Item -Recurse -Force (Join-Path $InstallDir "resources/gihanga/agent/skills/gihanga-community") (Join-Path $GihangaAgentDir "skills")
-Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/kinyarwanda-keywords.json") (Join-Path $GihangaAgentDir "data/kinyarwanda-keywords.json")
+Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/*") (Join-Path $GihangaAgentDir "data")
 
 if ($env:AZURE_OPENAI_API_KEY -and ($env:AZURE_OPENAI_BASE_URL -or $env:AZURE_OPENAI_RESOURCE_NAME)) {
 	$AuthPath = Join-Path $GihangaAgentDir "auth.json"

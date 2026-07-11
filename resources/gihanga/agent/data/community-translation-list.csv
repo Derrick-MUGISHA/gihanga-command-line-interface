@@ -1,0 +1,92 @@
+category,english,preferred_kinyarwanda,status,notes
+core,skills,ubumenyi,approved,Preferred Gihanga term
+core,code,kode,approved,Keep short and familiar
+core,install,install,approved,User prefers install unchanged
+core,extension,ingereko,approved,Plural ingereko
+core,settings,igenamiterere,approved,Use for config/settings
+core,session,ikiganiro,approved,Use for chat/session where clear
+core,continue,komeza,approved,Slash command concept
+core,login,kwinjira,approved,Slash command concept
+core,quit,sohoka,approved,Slash command concept
+core,model,icyitegererezo,approved,Use when not too long
+core,system prompt,amabwiriza remezo ya sisitemu,approved,Long but accepted
+ui,provider,,needs_translation,Can stay provider if Kinyarwanda is awkward
+ui,prompt,,needs_translation,Can stay prompt if Kinyarwanda is awkward
+ui,theme,insanganyamatsiko,approved,May use theme in CLI if shorter
+ui,terminal,terminal,approved,Keep English technical term
+ui,command,itegeko,needs_review,Use command if clearer
+ui,resource,umutungo,needs_review,Could be too broad
+ui,loaded resources,,needs_translation,Startup phrase
+ui,startup,,needs_translation,May stay startup
+ui,reload,,needs_translation,Maybe vugurura/gusubizamo
+ui,warning,iburira,needs_review,Maybe warning is clearer
+ui,error,ikosa,approved,
+ui,success,byakunze,needs_review,
+ui,cancel,hagarika,approved,
+ui,select,hitamo,approved,
+ui,navigate,,needs_translation,
+ui,search,shakisha,approved,
+ui,filter,filter,approved,Keep English if clearer
+ui,path,inzira,needs_review,Path may stay English in code docs
+ui,file,dosiye,approved,
+ui,folder,ububiko,approved,
+ui,directory,ububiko,approved,
+ui,workspace,workspace,approved,Keep English if clearer
+ui,project,poroje,approved,
+ui,repository,repo,approved,Use repo
+ui,branch,branch,approved,Keep English in git context
+ui,commit,commit,approved,Keep English in git context
+ui,push,push,approved,Keep English in git context
+ui,pull,pull,approved,Keep English in git context
+auth,API key,API key,approved,Keep technical term
+auth,OAuth,OAuth,approved,Keep technical term
+auth,subscription,subscription,approved,But hidden/removed in Gihanga auth flow
+auth,authentication,kwemeza umwirondoro,needs_review,Can be long; use auth if UI tight
+auth,credential,credential,approved,Keep if clearer
+auth,environment variable,environment variable,approved,Keep technical phrase
+auth,base URL,base URL,approved,Keep technical phrase
+auth,resource name,resource name,approved,Keep technical phrase
+models,thinking,gutekereza,approved,
+models,reasoning,gutekereza,needs_review,
+models,context,context,approved,Keep technical word in UI
+models,token,token,approved,Keep technical word
+models,input,iyinjira,needs_review,Input may stay English
+models,output,igisohoka,needs_review,Output may stay English
+models,cost,ikiguzi,approved,
+models,currency,ifaranga,approved,
+models,weather,ikirere,approved,
+models,Kigali weather,ikirere cya Kigali,approved,
+dev,bug,bug,approved,
+dev,fix,kosora,approved,
+dev,build,kubaka,approved,
+dev,test,gerageza,approved,But test may stay English in commands
+dev,deploy,deploy,approved,Keep English technical term
+dev,server,server,approved,
+dev,worker,worker,approved,
+dev,database,database,approved,
+dev,cache,cache,approved,
+dev,queue,queue,approved,
+dev,request,request,approved,
+dev,response,response,approved,
+dev,stream,stream,approved,
+dev,tool,igikoresho,approved,
+dev,tools,ibikoresho,approved,
+dev,slash commands,slash commands,approved,Keep English phrase
+community,beginner,utangiriyeho,approved,
+community,student,umunyeshuri,approved,
+community,developer,developer,approved,Keep English community term
+community,programmer,programmer,approved,
+community,community,community,approved,
+community,learning,kwiga,approved,
+community,lesson,isomo,approved,
+community,example,urugero,approved,
+community,documentation,docs,approved,Use docs in CLI
+community,guide,guide,approved,
+community,help,ubufasha,approved,
+community,explain,sobanura,approved,
+community,translate,semura,approved,
+community,review,suzuma,approved,
+community,improve,tezimbere,approved,
+community,Rwanda,u Rwanda,approved,
+community,Kinyarwanda,Ikinyarwanda,approved,
+community,thousand hills,imisozi igihumbi,approved,Use in ASCII/banner

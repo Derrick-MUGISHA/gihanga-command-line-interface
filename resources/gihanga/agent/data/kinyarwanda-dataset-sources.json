@@ -1,0 +1,70 @@
+{
+  "name": "kinyarwanda-dataset-sources",
+  "description": "Public Kinyarwanda data sources Gihanga can use as references or future import targets. Do not copy large copyrighted text into Gihanga; store citations, metadata, and small curated terms only.",
+  "updated": "2026-07-11",
+  "sources": [
+    {
+      "name": "mbazaNLP Kinyarwanda Monolingual Dataset v01.x",
+      "type": "monolingual corpus",
+      "url": "https://huggingface.co/datasets/mbazaNLP/kinyarwanda_monolingual_v01.0",
+      "language": "rw",
+      "size_note": "About 78k documents and about 25 million words in v01.0; dataset card recommends using v01.1 when available.",
+      "license_note": "CC BY 4.0 with copyright retained by original text authors; use for data processing/statistical analysis, not republishing large text chunks.",
+      "recommended_use": "Train/evaluate language understanding, extract frequency statistics, curate short glossary candidates with attribution."
+    },
+    {
+      "name": "mbazaNLP Kinyarwanda-English parallel dataset",
+      "type": "parallel corpus",
+      "url": "https://huggingface.co/datasets/mbazaNLP/Kinyarwanda_English_parallel_dataset",
+      "language": "rw-en",
+      "size_note": "About 55.7k sentence pairs.",
+      "license_note": "CC BY 4.0; religious/web-scraped content, not fully curated.",
+      "recommended_use": "Translation model experiments and terminology alignment; review before using community-facing text."
+    },
+    {
+      "name": "Digital Umuganda Kinyarwanda-English machine translation dataset",
+      "type": "parallel corpus",
+      "url": "https://huggingface.co/datasets/DigitalUmuganda/kinyarwanda-english-machine-translation-dataset",
+      "language": "rw-en",
+      "size_note": "Kinyarwanda-English TSV corpus on Hugging Face.",
+      "license_note": "Check dataset card/license before redistribution.",
+      "recommended_use": "Translation examples and terminology review."
+    },
+    {
+      "name": "Leipzig Corpora Collection Kinyarwanda Wikipedia 2021",
+      "type": "monolingual corpus",
+      "url": "https://corpora.uni-leipzig.de/en?corpusId=kin_wikipedia_2021",
+      "language": "rw",
+      "size_note": "2,387 sentences and 38,980 tokens.",
+      "license_note": "Wikipedia-derived; cite Leipzig Corpora Collection and Wikipedia.",
+      "recommended_use": "Small clean reference corpus and word co-occurrence/frequency examples."
+    },
+    {
+      "name": "KINNEWS and KIRNEWS Corpus",
+      "type": "classification corpus and stopword list",
+      "url": "https://github.com/Andrews2017/KINNEWS-and-KIRNEWS-Corpus",
+      "language": "rw, rn",
+      "size_note": "KINNEWS has about 21,268 Kinyarwanda news articles with 14 classes.",
+      "license_note": "Repository is MIT; cite the COLING 2020 paper. Verify raw data download terms before redistribution.",
+      "recommended_use": "News category terms, stopwords, classification/evaluation."
+    },
+    {
+      "name": "Mozilla Common Voice Kinyarwanda / Digital Umuganda references",
+      "type": "speech corpus text prompts",
+      "url": "https://commonvoice.mozilla.org/en/datasets",
+      "language": "rw",
+      "size_note": "Kinyarwanda speech/text prompts; Digital Umuganda repo references 1.2M+ sentences via Common Voice releases.",
+      "license_note": "Common Voice data uses Mozilla dataset license terms; check release license before bundling.",
+      "recommended_use": "Speech, pronunciation, and short sentence examples."
+    },
+    {
+      "name": "hunspell-rw",
+      "type": "spell-check dictionary",
+      "url": "https://github.com/kscanne/hunspell-rw",
+      "language": "rw",
+      "size_note": "Kinyarwanda spell-checker sources.",
+      "license_note": "Check repository license before bundling derived data.",
+      "recommended_use": "Spelling validation and morphology hints."
+    }
+  ]
+}
