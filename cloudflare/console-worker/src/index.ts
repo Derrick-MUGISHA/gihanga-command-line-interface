@@ -204,7 +204,7 @@ Write-Host "Run: gihanga --help"
 const SITE_NAV = `
   <header class="relative mx-auto flex w-[90%] items-center justify-between px-0 py-5">
     <a href="/" class="flex items-center gap-3">
-      <span class="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-400 text-slate-950 shadow-glow">
+      <span class="grid h-11 w-11 place-items-center rounded-lg bg-emerald-400 text-slate-950 shadow-glow">
         <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"></path>
           <path d="M12 8v8"></path>
@@ -286,13 +286,13 @@ const HOME_HTML = pageShell(
           Gihanga ifasha gusoma project, gusobanura kode, kuyihindura, gukoresha bash, gucunga ubumenyi, no guhitamo models za Upskillsafrica mu buryo bworoshye muri terminal.
         </p>
         <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-          <a href="#install" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 shadow-glow transition hover:bg-emerald-300">Tangira install <i data-lucide="arrow-right" class="h-5 w-5"></i></a>
-          <a href="/docs" class="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-white/5 px-6 py-3 font-bold text-white transition hover:bg-white/10">Soma docs</a>
+          <a href="#install" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-400 px-6 py-3 font-bold text-slate-950 shadow-glow transition hover:bg-emerald-300">Tangira install <i data-lucide="arrow-right" class="h-5 w-5"></i></a>
+          <a href="/docs" class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-700 bg-white/5 px-6 py-3 font-bold text-white transition hover:bg-white/10">Soma docs</a>
         </div>
       </div>
-      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-4 shadow-2xl backdrop-blur">
+      <div class="rounded-xl border border-white/10 bg-slate-900/70 p-4 shadow-2xl backdrop-blur">
         <div class="mb-3 flex items-center gap-2 px-2"><span class="h-3 w-3 rounded-full bg-red-400"></span><span class="h-3 w-3 rounded-full bg-amber-400"></span><span class="h-3 w-3 rounded-full bg-emerald-400"></span><span class="ml-3 text-xs text-slate-400">terminal</span></div>
-        <pre class="overflow-x-auto rounded-2xl bg-slate-950 p-5 text-sm leading-7 text-slate-200"><code>$ gihanga
+        <pre class="overflow-x-auto rounded-lg bg-slate-950 p-5 text-sm leading-7 text-slate-200"><code>$ gihanga
 
 ╭─ Gihanga kumurimo · ~/Projects/app                  Kode mbi ni nka brochette idahiye: igora kuyihekenya
 ╰─ o3 · medium · 1.3%/200k · ↑2.6k ↓51 · 0 RWF        Kigali 22°C 🌤
@@ -313,21 +313,21 @@ const HOME_HTML = pageShell(
         <a href="/docs#subscription" class="text-sm font-semibold text-emerald-300 hover:text-emerald-200">Reba subscription flow →</a>
       </div>
       <div class="grid gap-5 lg:grid-cols-2">
-        <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
-          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-2xl bg-cyan-400/15 text-cyan-200"><i data-lucide="monitor" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-white">🐧 🍎 Linux / macOS</h3><p class="text-sm text-slate-400">Bash installer</p></div></div>
-          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre>
+        <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-lg bg-cyan-400/15 text-cyan-200"><i data-lucide="monitor" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-white">🐧 🍎 Linux / macOS</h3><p class="text-sm text-slate-400">Bash installer</p></div></div>
+          <pre class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre>
         </article>
-        <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
-          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-2xl bg-blue-400/15 text-blue-200"><i data-lucide="panel-top" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-white">🪟 Windows PowerShell</h3><p class="text-sm text-slate-400">Native Windows installer</p></div></div>
-          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
+        <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-lg bg-blue-400/15 text-blue-200"><i data-lucide="panel-top" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-white">🪟 Windows PowerShell</h3><p class="text-sm text-slate-400">Native Windows installer</p></div></div>
+          <pre class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
         </article>
       </div>
     </section>
 
     <section class="mx-auto grid w-[90%] gap-5 py-10 lg:grid-cols-3">
-      <article class="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-6"><i data-lucide="languages" class="mb-4 h-8 w-8 text-emerald-300"></i><h3 class="text-xl font-bold text-white">Kinyarwanda-first</h3><p class="mt-2 text-slate-300">Default responses in Kinyarwanda unless English is requested. Commands like /kwinjira and /sohoka fit local workflow.</p></article>
-      <article class="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-6"><i data-lucide="brain-circuit" class="mb-4 h-8 w-8 text-cyan-300"></i><h3 class="text-xl font-bold text-white">Ubumenyi</h3><p class="mt-2 text-slate-300">Bundled Gihanga community guidance, Cloudflare skills, and project knowledge loaded into terminal workflows.</p></article>
-      <article class="rounded-3xl border border-amber-400/20 bg-amber-400/10 p-6"><i data-lucide="wallet-cards" class="mb-4 h-8 w-8 text-amber-300"></i><h3 class="text-xl font-bold text-white">Mobile Money credits</h3><p class="mt-2 text-slate-300">Users choose a plan, enter phone number, confirm on phone, then Gihanga unlocks models automatically.</p></article>
+      <article class="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-6"><i data-lucide="languages" class="mb-4 h-8 w-8 text-emerald-300"></i><h3 class="text-xl font-bold text-white">Kinyarwanda-first</h3><p class="mt-2 text-slate-300">Default responses in Kinyarwanda unless English is requested. Commands like /kwinjira and /sohoka fit local workflow.</p></article>
+      <article class="rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-6"><i data-lucide="brain-circuit" class="mb-4 h-8 w-8 text-cyan-300"></i><h3 class="text-xl font-bold text-white">Ubumenyi</h3><p class="mt-2 text-slate-300">Bundled Gihanga community guidance, Cloudflare skills, and project knowledge loaded into terminal workflows.</p></article>
+      <article class="rounded-xl border border-amber-400/20 bg-amber-400/10 p-6"><i data-lucide="wallet-cards" class="mb-4 h-8 w-8 text-amber-300"></i><h3 class="text-xl font-bold text-white">Mobile Money credits</h3><p class="mt-2 text-slate-300">Users choose a plan, enter phone number, confirm on phone, then Gihanga unlocks models automatically.</p></article>
     </section>
   </main>`
 );
@@ -337,13 +337,13 @@ const DOCS_HTML = pageShell(
 	"Documentation for installing and using Gihanga CLI with Upskillsafrica models, Mobile Money subscriptions, and Kinyarwanda-first workflows.",
 	`
   <main class="relative mx-auto w-[90%] py-10">
-    <section class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
       <p class="text-sm font-semibold uppercase tracking-widest text-emerald-300">Docs</p>
       <h1 class="mt-3 text-4xl font-black text-white sm:text-5xl">Gihanga CLI documentation</h1>
       <p class="mt-4 max-w-4xl text-slate-300">Gihanga ni terminal AI assistant ya developers: isoma project, ikandika/ihindura kode, ikoresha bash, kandi ikoresha Upskillsafrica account, credits, model catalog, n'ubumenyi bwa Kinyarwanda.</p>
     </section>
     <div class="mt-6 grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-      <aside class="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-sm text-slate-300">
+      <aside class="rounded-xl border border-white/10 bg-white/[0.04] p-5 text-sm text-slate-300">
         <p class="mb-3 font-bold text-white">Ibirimo</p>
         <a class="block py-1 hover:text-white" href="#install">Install</a>
         <a class="block py-1 hover:text-white" href="#login">Login</a>
@@ -353,14 +353,14 @@ const DOCS_HTML = pageShell(
         <a class="block py-1 hover:text-white" href="#troubleshooting">Troubleshooting</a>
       </aside>
       <section class="space-y-5">
-        <article id="install" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Install</h2><pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950 p-4 text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+        <article id="install" class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Install</h2><pre class="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash
 
 gihanga --help</code></pre><p class="mt-3 text-slate-300">Installer ikora clone/update, npm install/build/link quietly, hanyuma ishyira Gihanga data muri <code>~/.gihanga/agent</code>.</p></article>
-        <article id="login" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Login / Register</h2><p class="mt-3 text-slate-300">Fungura Gihanga, ukoreshe <code>/kwinjira</code>, uhitemo Upskillsafrica, winjire cyangwa wiyandikishe. Local auth token ibikwa muri config ya Gihanga kuri machine yawe.</p></article>
-        <article id="subscription" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Mobile Money subscription</h2><ol class="mt-3 list-decimal space-y-2 pl-5 text-slate-300"><li>Hitamo plan: 30min, 1h, 12 days, cyangwa monthly.</li><li>Andika nimero ya Mobile Money muri terminal.</li><li>Emeza ubwishyu kuri telefoni.</li><li>Gihanga ipollinga verify endpoint, igafungura model selector iyo byemejwe.</li></ol><a class="mt-4 inline-block text-emerald-300 hover:text-emerald-200" href="/credits">Open credits page →</a></article>
-        <article id="models" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Models</h2><p class="mt-3 text-slate-300">TUI yerekana curated 12 models muri provider ya <code>upskillsafrica</code>. Public UI ntigaragaza OpenRouter/Azure internals. Organisation-only models <code>UAF_model_one</code> na <code>uaf_model_two_alpha</code> zisaba organisation code.</p></article>
-        <article id="ubumenyi" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Ubumenyi</h2><p class="mt-3 text-slate-300">Commands z'ubumenyi zigaragara nka <code>ubumenyi:gihanga-community</code>, <code>ubumenyi:agents-sdk</code>, na <code>ubumenyi:cloudflare</code>. Zifasha Gihanga kumenya community rules, Cloudflare Workers, no gukora Kinyarwanda-first coding.</p></article>
-        <article id="troubleshooting" class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Troubleshooting</h2><ul class="mt-3 list-disc space-y-2 pl-5 text-slate-300"><li>Niba installer yanze, reba log: <code>/tmp/gihanga-install.log</code>.</li><li>Niba nta models ziboneka, koresha <code>/kwinjira</code>.</li><li>Niba organisation model ivuze code missing, banza wongere organisation code muri account menu.</li></ul></article>
+        <article id="login" class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Login / Register</h2><p class="mt-3 text-slate-300">Fungura Gihanga, ukoreshe <code>/kwinjira</code>, uhitemo Upskillsafrica, winjire cyangwa wiyandikishe. Local auth token ibikwa muri config ya Gihanga kuri machine yawe.</p></article>
+        <article id="subscription" class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Mobile Money subscription</h2><ol class="mt-3 list-decimal space-y-2 pl-5 text-slate-300"><li>Hitamo plan: 30min, 1h, 12 days, cyangwa monthly.</li><li>Andika nimero ya Mobile Money muri terminal.</li><li>Emeza ubwishyu kuri telefoni.</li><li>Gihanga ipollinga verify endpoint, igafungura model selector iyo byemejwe.</li></ol><a class="mt-4 inline-block text-emerald-300 hover:text-emerald-200" href="/credits">Open credits page →</a></article>
+        <article id="models" class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Models</h2><p class="mt-3 text-slate-300">TUI yerekana curated 12 models muri provider ya <code>upskillsafrica</code>. Public UI ntigaragaza OpenRouter/Azure internals. Organisation-only models <code>UAF_model_one</code> na <code>uaf_model_two_alpha</code> zisaba organisation code.</p></article>
+        <article id="ubumenyi" class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Ubumenyi</h2><p class="mt-3 text-slate-300">Commands z'ubumenyi zigaragara nka <code>ubumenyi:gihanga-community</code>, <code>ubumenyi:agents-sdk</code>, na <code>ubumenyi:cloudflare</code>. Zifasha Gihanga kumenya community rules, Cloudflare Workers, no gukora Kinyarwanda-first coding.</p></article>
+        <article id="troubleshooting" class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Troubleshooting</h2><ul class="mt-3 list-disc space-y-2 pl-5 text-slate-300"><li>Niba installer yanze, reba log: <code>/tmp/gihanga-install.log</code>.</li><li>Niba nta models ziboneka, koresha <code>/kwinjira</code>.</li><li>Niba organisation model ivuze code missing, banza wongere organisation code muri account menu.</li></ul></article>
       </section>
     </div>
   </main>`
@@ -371,18 +371,18 @@ const PRIVACY_HTML = pageShell(
 	"Privacy Policy for Gihanga CLI and Upskillsafrica AI subscription services.",
 	`
   <main class="relative mx-auto w-[90%] py-10">
-    <section class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
       <p class="text-sm font-semibold uppercase tracking-widest text-emerald-300">Privacy Policy</p>
       <h1 class="mt-3 text-4xl font-black text-white">Gihanga Privacy Policy</h1>
       <p class="mt-3 text-slate-400">Effective date: 2026-07-13</p>
     </section>
     <section class="mt-6 space-y-5 text-slate-300">
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Data we process</h2><p class="mt-3">Gihanga may process account email, hashed password, session metadata, Mobile Money phone number for payment initiation, transaction reference, entitlement/credit status, model usage totals, and technical request metadata needed to operate the service.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Local data</h2><p class="mt-3">The CLI stores local configuration, model catalog, skills, scripts, and login token under <code>~/.gihanga/agent</code>. Users can remove this directory to clear local Gihanga data.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Payments</h2><p class="mt-3">When you enter a Mobile Money number, Gihanga sends it to the Upskillsafrica AI backend and payment worker to start and verify payment. We use payment data to grant credits and handle support.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">AI requests</h2><p class="mt-3">Prompts, code snippets, files, and tool context sent from the CLI may be processed by configured AI providers through Upskillsafrica routing. Do not submit secrets or information you are not allowed to share.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Retention and security</h2><p class="mt-3">Passwords are hashed, sessions can be revoked, and entitlements/usage are stored to enforce subscriptions and quotas. We keep operational records only as needed for service, security, accounting, and support.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Contact</h2><p class="mt-3">For privacy requests, contact Upskillsafrica Foundation through <a class="text-emerald-300 hover:text-emerald-200" href="https://upskillsafrica.org">upskillsafrica.org</a>.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Data we process</h2><p class="mt-3">Gihanga may process account email, hashed password, session metadata, Mobile Money phone number for payment initiation, transaction reference, entitlement/credit status, model usage totals, and technical request metadata needed to operate the service.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Local data</h2><p class="mt-3">The CLI stores local configuration, model catalog, skills, scripts, and login token under <code>~/.gihanga/agent</code>. Users can remove this directory to clear local Gihanga data.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Payments</h2><p class="mt-3">When you enter a Mobile Money number, Gihanga sends it to the Upskillsafrica AI backend and payment worker to start and verify payment. We use payment data to grant credits and handle support.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">AI requests</h2><p class="mt-3">Prompts, code snippets, files, and tool context sent from the CLI may be processed by configured AI providers through Upskillsafrica routing. Do not submit secrets or information you are not allowed to share.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Retention and security</h2><p class="mt-3">Passwords are hashed, sessions can be revoked, and entitlements/usage are stored to enforce subscriptions and quotas. We keep operational records only as needed for service, security, accounting, and support.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Contact</h2><p class="mt-3">For privacy requests, contact Upskillsafrica Foundation through <a class="text-emerald-300 hover:text-emerald-200" href="https://upskillsafrica.org">upskillsafrica.org</a>.</p></article>
     </section>
   </main>`
 );
@@ -392,18 +392,18 @@ const TERMS_HTML = pageShell(
 	"Terms of Service for using Gihanga CLI and Upskillsafrica AI models.",
 	`
   <main class="relative mx-auto w-[90%] py-10">
-    <section class="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
+    <section class="rounded-2xl border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
       <p class="text-sm font-semibold uppercase tracking-widest text-emerald-300">Terms of Service</p>
       <h1 class="mt-3 text-4xl font-black text-white">Gihanga Terms of Service</h1>
       <p class="mt-3 text-slate-400">Effective date: 2026-07-13</p>
     </section>
     <section class="mt-6 space-y-5 text-slate-300">
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Use of service</h2><p class="mt-3">Gihanga is a coding assistant for lawful development, learning, automation, and project work. You are responsible for the code, commands, files, and prompts you submit or execute.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Accounts and subscriptions</h2><p class="mt-3">Access to Upskillsafrica models may require registration, login, and active credits. Mobile Money payments unlock entitlements according to the selected plan. Organisation-only models require a valid organisation code.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Acceptable use</h2><p class="mt-3">Do not use Gihanga for illegal activity, credential theft, unauthorized access, spam, malware, or abuse of third-party systems. Respect provider policies and local laws.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">AI output</h2><p class="mt-3">AI output can be wrong. Review code, run tests, and verify changes before using them in production. Gihanga may execute commands only when you choose to run or approve them.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Availability</h2><p class="mt-3">The service depends on network access, Cloudflare Workers, payment providers, databases, and AI providers. Availability, latency, models, quotas, and pricing may change.</p></article>
-      <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Contact</h2><p class="mt-3">Questions about these terms can be sent through <a class="text-emerald-300 hover:text-emerald-200" href="https://upskillsafrica.org">upskillsafrica.org</a>.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Use of service</h2><p class="mt-3">Gihanga is a coding assistant for lawful development, learning, automation, and project work. You are responsible for the code, commands, files, and prompts you submit or execute.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Accounts and subscriptions</h2><p class="mt-3">Access to Upskillsafrica models may require registration, login, and active credits. Mobile Money payments unlock entitlements according to the selected plan. Organisation-only models require a valid organisation code.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Acceptable use</h2><p class="mt-3">Do not use Gihanga for illegal activity, credential theft, unauthorized access, spam, malware, or abuse of third-party systems. Respect provider policies and local laws.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">AI output</h2><p class="mt-3">AI output can be wrong. Review code, run tests, and verify changes before using them in production. Gihanga may execute commands only when you choose to run or approve them.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Availability</h2><p class="mt-3">The service depends on network access, Cloudflare Workers, payment providers, databases, and AI providers. Availability, latency, models, quotas, and pricing may change.</p></article>
+      <article class="rounded-xl border border-white/10 bg-white/[0.04] p-6"><h2 class="text-2xl font-bold text-white">Contact</h2><p class="mt-3">Questions about these terms can be sent through <a class="text-emerald-300 hover:text-emerald-200" href="https://upskillsafrica.org">upskillsafrica.org</a>.</p></article>
     </section>
   </main>`
 );
@@ -419,21 +419,21 @@ const CREDITS_HTML = `<!doctype html>
 <body class="min-h-screen bg-slate-950 text-slate-100">
   <main class="mx-auto max-w-5xl px-6 py-12">
     <a href="/" class="text-sm text-emerald-300 hover:text-emerald-200">← Gihanga Console</a>
-    <section class="mt-8 rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+    <section class="mt-8 rounded-xl border border-white/10 bg-slate-900/70 p-6">
       <p class="text-sm uppercase tracking-[0.2em] text-emerald-300">Upskillsafrica AI</p>
       <h1 class="mt-3 text-4xl font-black">Credits na Mobile Money</h1>
       <p class="mt-3 max-w-2xl text-slate-300">Pay through terminal or web, then use your receipt reference to check credits and model access.</p>
       <div class="mt-8 grid gap-4 md:grid-cols-2">
-        <label class="block"><span class="text-sm text-slate-300">Phone number</span><input id="phone" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="078..." /></label>
-        <label class="block"><span class="text-sm text-slate-300">Plan</span><select id="plan" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3"></select></label>
+        <label class="block"><span class="text-sm text-slate-300">Phone number</span><input id="phone" class="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-4 py-3" placeholder="078..." /></label>
+        <label class="block"><span class="text-sm text-slate-300">Plan</span><select id="plan" class="mt-2 w-full rounded-md border border-slate-700 bg-slate-950 px-4 py-3"></select></label>
       </div>
-      <button id="pay" class="mt-5 rounded-xl bg-emerald-400 px-5 py-3 font-bold text-slate-950 hover:bg-emerald-300">Start payment</button>
-      <pre id="paymentResult" class="mt-5 overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm text-emerald-200"></pre>
+      <button id="pay" class="mt-5 rounded-md bg-emerald-400 px-5 py-3 font-bold text-slate-950 hover:bg-emerald-300">Start payment</button>
+      <pre id="paymentResult" class="mt-5 overflow-x-auto rounded-md bg-slate-950 p-4 text-sm text-emerald-200"></pre>
     </section>
-    <section class="mt-6 rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+    <section class="mt-6 rounded-xl border border-white/10 bg-slate-900/70 p-6">
       <h2 class="text-2xl font-bold">Check credits</h2>
-      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" class="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="receipt / transaction ref" /><button id="check" class="rounded-xl bg-cyan-300 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-200">Check</button></div>
-      <pre id="creditsResult" class="mt-5 overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm text-cyan-100"></pre>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" class="flex-1 rounded-md border border-slate-700 bg-slate-950 px-4 py-3" placeholder="receipt / transaction ref" /><button id="check" class="rounded-md bg-cyan-300 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-200">Check</button></div>
+      <pre id="creditsResult" class="mt-5 overflow-x-auto rounded-md bg-slate-950 p-4 text-sm text-cyan-100"></pre>
     </section>
   </main>
   <footer class="mx-auto max-w-5xl px-6 py-8 text-sm text-slate-500">
