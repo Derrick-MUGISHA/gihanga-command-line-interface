@@ -5,6 +5,30 @@ set -euo pipefail
 
 REPO_URL="${REPO_URL}"
 INSTALL_DIR="\${GIHANGA_INSTALL_DIR:-$HOME/.gihanga-cli}"
+INSTALL_LOG="\${GIHANGA_INSTALL_LOG:-\${TMPDIR:-/tmp}/gihanga-install.log}"
+: > "$INSTALL_LOG"
+
+run_quiet() {
+	local label="$1"
+	shift
+	echo "$label"
+	if ! "$@" >>"$INSTALL_LOG" 2>&1; then
+		echo "Error: $label failed. Log: $INSTALL_LOG" >&2
+		tail -40 "$INSTALL_LOG" >&2 || true
+		exit 1
+	fi
+}
+
+run_quiet_shell() {
+	local label="$1"
+	shift
+	echo "$label"
+	if ! bash -lc "$*" >>"$INSTALL_LOG" 2>&1; then
+		echo "Error: $label failed. Log: $INSTALL_LOG" >&2
+		tail -40 "$INSTALL_LOG" >&2 || true
+		exit 1
+	fi
+}
 
 require_command() {
 	if ! command -v "$1" >/dev/null 2>&1; then
@@ -18,23 +42,19 @@ require_command node
 require_command npm
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-	echo "Kuvugurura Gihanga..."
-	git -C "$INSTALL_DIR" pull --ff-only --quiet
+	run_quiet "Kuvugurura Gihanga..." git -C "$INSTALL_DIR" pull --ff-only --quiet
 elif [ -e "$INSTALL_DIR" ]; then
 	echo "Error: $INSTALL_DIR exists but is not a git repository." >&2
 	echo "Set GIHANGA_INSTALL_DIR to another path or remove that folder." >&2
 	exit 1
 else
-	echo "Kwinjiza Gihanga..."
-	git clone --quiet "$REPO_URL" "$INSTALL_DIR"
+	run_quiet "Kwinjiza Gihanga..." git clone --quiet "$REPO_URL" "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
-echo "Gutegura amapakeji..."
-npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
-echo "Kubaka Gihanga..."
-npm run build --silent
-(cd packages/coding-agent && npm link --silent)
+run_quiet "Gutegura amapakeji..." npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
+run_quiet "Kubaka Gihanga..." npm run build --silent
+run_quiet_shell "Gushyira Gihanga muri terminal..." "cd packages/coding-agent && npm link --silent"
 
 GIHANGA_AGENT_DIR="\${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"
@@ -89,6 +109,24 @@ Set-StrictMode -Version Latest
 
 $RepoUrl = "${REPO_URL}"
 $InstallDir = if ($env:GIHANGA_INSTALL_DIR) { $env:GIHANGA_INSTALL_DIR } else { Join-Path $HOME ".gihanga-cli" }
+$InstallLog = if ($env:GIHANGA_INSTALL_LOG) { $env:GIHANGA_INSTALL_LOG } else { Join-Path ([IO.Path]::GetTempPath()) "gihanga-install.log" }
+Set-Content -Path $InstallLog -Value ""
+
+function Invoke-Quiet($Label, [ScriptBlock]$Command) {
+	Write-Host $Label
+	try {
+		& $Command *> $InstallLog
+	} catch {
+		Write-Error ($Label + " failed. Log: " + $InstallLog)
+		if (Test-Path -LiteralPath $InstallLog) { Get-Content -Tail 40 $InstallLog | Write-Error }
+		throw
+	}
+	if ($LASTEXITCODE -ne 0) {
+		Write-Error ($Label + " failed. Log: " + $InstallLog)
+		if (Test-Path -LiteralPath $InstallLog) { Get-Content -Tail 40 $InstallLog | Write-Error }
+		exit $LASTEXITCODE
+	}
+}
 
 function Require-Command($Name) {
 	if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
@@ -101,22 +139,18 @@ Require-Command node
 Require-Command npm
 
 if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-	Write-Host "Kuvugurura Gihanga..."
-	git -C $InstallDir pull --ff-only --quiet
+	Invoke-Quiet "Kuvugurura Gihanga..." { git -C $InstallDir pull --ff-only --quiet }
 } elseif (Test-Path -LiteralPath $InstallDir) {
 	throw "$InstallDir exists but is not a git repository. Set GIHANGA_INSTALL_DIR to another path or remove that folder."
 } else {
-	Write-Host "Kwinjiza Gihanga..."
-	git clone --quiet $RepoUrl $InstallDir
+	Invoke-Quiet "Kwinjiza Gihanga..." { git clone --quiet $RepoUrl $InstallDir }
 }
 
 Set-Location $InstallDir
-Write-Host "Gutegura amapakeji..."
-npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
-Write-Host "Kubaka Gihanga..."
-npm run build --silent
+Invoke-Quiet "Gutegura amapakeji..." { npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error }
+Invoke-Quiet "Kubaka Gihanga..." { npm run build --silent }
 Push-Location "packages/coding-agent"
-npm link --silent
+Invoke-Quiet "Gushyira Gihanga muri terminal..." { npm link --silent }
 Pop-Location
 
 $GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else { Join-Path $HOME ".gihanga/agent" }

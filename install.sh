@@ -3,6 +3,30 @@ set -euo pipefail
 
 REPO_URL="https://github.com/DannyIRUMVA/gihanga-command-line-interface.git"
 INSTALL_DIR="${GIHANGA_INSTALL_DIR:-$HOME/.gihanga-cli}"
+INSTALL_LOG="${GIHANGA_INSTALL_LOG:-${TMPDIR:-/tmp}/gihanga-install.log}"
+: > "$INSTALL_LOG"
+
+run_quiet() {
+	local label="$1"
+	shift
+	echo "$label"
+	if ! "$@" >>"$INSTALL_LOG" 2>&1; then
+		echo "Error: $label failed. Log: $INSTALL_LOG" >&2
+		tail -40 "$INSTALL_LOG" >&2 || true
+		exit 1
+	fi
+}
+
+run_quiet_shell() {
+	local label="$1"
+	shift
+	echo "$label"
+	if ! bash -lc "$*" >>"$INSTALL_LOG" 2>&1; then
+		echo "Error: $label failed. Log: $INSTALL_LOG" >&2
+		tail -40 "$INSTALL_LOG" >&2 || true
+		exit 1
+	fi
+}
 
 require_command() {
 	if ! command -v "$1" >/dev/null 2>&1; then
@@ -16,23 +40,19 @@ require_command node
 require_command npm
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-	echo "Kuvugurura Gihanga..."
-	git -C "$INSTALL_DIR" pull --ff-only --quiet
+	run_quiet "Kuvugurura Gihanga..." git -C "$INSTALL_DIR" pull --ff-only --quiet
 elif [ -e "$INSTALL_DIR" ]; then
 	echo "Error: $INSTALL_DIR exists but is not a git repository." >&2
 	echo "Set GIHANGA_INSTALL_DIR to another path or remove that folder." >&2
 	exit 1
 else
-	echo "Kwinjiza Gihanga..."
-	git clone --quiet "$REPO_URL" "$INSTALL_DIR"
+	run_quiet "Kwinjiza Gihanga..." git clone --quiet "$REPO_URL" "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
-echo "Gutegura amapakeji..."
-npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
-echo "Kubaka Gihanga..."
-npm run build --silent
-(cd packages/coding-agent && npm link --silent)
+run_quiet "Gutegura amapakeji..." npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
+run_quiet "Kubaka Gihanga..." npm run build --silent
+run_quiet_shell "Gushyira Gihanga muri terminal..." "cd packages/coding-agent && npm link --silent"
 
 GIHANGA_AGENT_DIR="${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"

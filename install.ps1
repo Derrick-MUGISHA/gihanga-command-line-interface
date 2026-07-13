@@ -3,6 +3,24 @@ Set-StrictMode -Version Latest
 
 $RepoUrl = "https://github.com/DannyIRUMVA/gihanga-command-line-interface.git"
 $InstallDir = if ($env:GIHANGA_INSTALL_DIR) { $env:GIHANGA_INSTALL_DIR } else { Join-Path $HOME ".gihanga-cli" }
+$InstallLog = if ($env:GIHANGA_INSTALL_LOG) { $env:GIHANGA_INSTALL_LOG } else { Join-Path ([IO.Path]::GetTempPath()) "gihanga-install.log" }
+Set-Content -Path $InstallLog -Value ""
+
+function Invoke-Quiet($Label, [ScriptBlock]$Command) {
+	Write-Host $Label
+	try {
+		& $Command *> $InstallLog
+	} catch {
+		Write-Error "${Label} failed. Log: $InstallLog"
+		if (Test-Path -LiteralPath $InstallLog) { Get-Content -Tail 40 $InstallLog | Write-Error }
+		throw
+	}
+	if ($LASTEXITCODE -ne 0) {
+		Write-Error "${Label} failed. Log: $InstallLog"
+		if (Test-Path -LiteralPath $InstallLog) { Get-Content -Tail 40 $InstallLog | Write-Error }
+		exit $LASTEXITCODE
+	}
+}
 
 function Require-Command($Name) {
 	if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
@@ -15,22 +33,18 @@ Require-Command node
 Require-Command npm
 
 if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-	Write-Host "Kuvugurura Gihanga..."
-	git -C $InstallDir pull --ff-only --quiet
+	Invoke-Quiet "Kuvugurura Gihanga..." { git -C $InstallDir pull --ff-only --quiet }
 } elseif (Test-Path -LiteralPath $InstallDir) {
 	throw "$InstallDir exists but is not a git repository. Set GIHANGA_INSTALL_DIR to another path or remove that folder."
 } else {
-	Write-Host "Kwinjiza Gihanga..."
-	git clone --quiet $RepoUrl $InstallDir
+	Invoke-Quiet "Kwinjiza Gihanga..." { git clone --quiet $RepoUrl $InstallDir }
 }
 
 Set-Location $InstallDir
-Write-Host "Gutegura amapakeji..."
-npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
-Write-Host "Kubaka Gihanga..."
-npm run build --silent
+Invoke-Quiet "Gutegura amapakeji..." { npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error }
+Invoke-Quiet "Kubaka Gihanga..." { npm run build --silent }
 Push-Location "packages/coding-agent"
-npm link --silent
+Invoke-Quiet "Gushyira Gihanga muri terminal..." { npm link --silent }
 Pop-Location
 
 $GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else { Join-Path $HOME ".gihanga/agent" }
