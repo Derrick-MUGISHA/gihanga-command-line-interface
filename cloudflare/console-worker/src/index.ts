@@ -423,6 +423,7 @@ const DOCS_HTML = pageShell(
         <a class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/5 hover:text-gihanga-text" href="#login"><i data-lucide="user-round-check" class="h-4 w-4 text-gihanga-cyan"></i> Login / Register</a>
         <a class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/5 hover:text-gihanga-text" href="#subscription"><i data-lucide="wallet-cards" class="h-4 w-4 text-gihanga-amber"></i> Subscription</a>
         <a class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/5 hover:text-gihanga-text" href="#models"><i data-lucide="cpu" class="h-4 w-4 text-gihanga-emerald"></i> Models</a>
+        <a class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/5 hover:text-gihanga-text" href="#providers"><i data-lucide="key-round" class="h-4 w-4 text-gihanga-amber"></i> API providers</a>
         <a class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/5 hover:text-gihanga-text" href="#ubumenyi"><i data-lucide="book-open-text" class="h-4 w-4 text-gihanga-cyan"></i> Ubumenyi</a>
         <a class="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-white/5 hover:text-gihanga-text" href="#troubleshooting"><i data-lucide="wrench" class="h-4 w-4 text-gihanga-amber"></i> Troubleshooting</a>
       </aside>
@@ -457,7 +458,27 @@ const DOCS_HTML = pageShell(
 
         <article data-reveal id="models" class="rounded-xl border border-white/10 bg-gihanga-glass p-6">
           <div class="flex items-start gap-4"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gihanga-emerald/10 text-gihanga-emerald"><i data-lucide="cpu" class="h-6 w-6"></i></span><div><p class="font-mono text-xs font-bold uppercase tracking-[0.1em] text-gihanga-emerald">Models</p><h2 class="text-2xl font-bold text-gihanga-text">Curated Upskillsafrica models</h2></div></div>
-          <p class="mt-4 text-[#dce1fb]">TUI yerekana 12 curated models muri provider ya <code>upskillsafrica</code>. UI ntigaragaza OpenRouter/Azure internals. Organisation models <code>UAF_model_one</code> na <code>uaf_model_two_alpha</code> zisaba organisation code.</p>
+          <p class="mt-4 text-[#dce1fb]">TUI yerekana 12 curated models muri provider ya <code>upskillsafrica</code>. Public UI ntigaragaza OpenRouter/Azure internals. Organisation models <code>UAF_model_one</code> na <code>uaf_model_two_alpha</code> zisaba organisation code.</p>
+        </article>
+
+        <article data-reveal id="providers" class="rounded-xl border border-white/10 bg-gihanga-glass p-6">
+          <div class="flex items-start gap-4"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gihanga-amber/10 text-gihanga-amber"><i data-lucide="key-round" class="h-6 w-6"></i></span><div><p class="font-mono text-xs font-bold uppercase tracking-[0.1em] text-gihanga-amber">Optional</p><h2 class="text-2xl font-bold text-gihanga-text">Add another provider with an API key</h2></div></div>
+          <p class="mt-4 text-[#dce1fb]">Upskillsafrica is the recommended default, but Gihanga can also use your own provider API key. Use this if you already have OpenRouter, Anthropic, OpenAI, Gemini, or another supported provider account.</p>
+          <div class="mt-4 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-lg border border-white/10 bg-gihanga-deep p-4">
+              <p class="font-mono text-xs font-bold uppercase tracking-[0.1em] text-gihanga-muted">TUI flow</p>
+              <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-[#dce1fb]"><li>Run <code>gihanga</code>.</li><li>Type <code>/kwinjira</code>.</li><li>Choose <strong>Use an API key</strong>.</li><li>Select your provider, for example <strong>OpenRouter</strong>.</li><li>Paste your API key and choose a model.</li></ol>
+            </div>
+            <div class="rounded-lg border border-white/10 bg-gihanga-deep p-4">
+              <p class="font-mono text-xs font-bold uppercase tracking-[0.1em] text-gihanga-muted">OpenRouter example</p>
+              <pre class="font-mono mt-3 overflow-x-auto rounded-md bg-black/30 p-3 text-sm text-[#68fcbf]"><code>/kwinjira
+Use an API key
+OpenRouter
+Paste API key
+/model</code></pre>
+            </div>
+          </div>
+          <p class="mt-4 text-sm text-gihanga-muted">Note: external provider keys are user-managed. Upskillsafrica subscriptions and Mobile Money credits only apply to the <code>upskillsafrica</code> provider.</p>
         </article>
 
         <article data-reveal id="ubumenyi" class="rounded-xl border border-white/10 bg-gihanga-glass p-6">
