@@ -15,20 +15,22 @@ Require-Command node
 Require-Command npm
 
 if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-	Write-Host "Kuvugurura Gihanga CLI muri $InstallDir"
-	git -C $InstallDir pull --ff-only
+	Write-Host "Kuvugurura Gihanga..."
+	git -C $InstallDir pull --ff-only --quiet
 } elseif (Test-Path -LiteralPath $InstallDir) {
 	throw "$InstallDir exists but is not a git repository. Set GIHANGA_INSTALL_DIR to another path or remove that folder."
 } else {
-	Write-Host "Installing Gihanga CLI into $InstallDir"
-	git clone $RepoUrl $InstallDir
+	Write-Host "Kwinjiza Gihanga..."
+	git clone --quiet $RepoUrl $InstallDir
 }
 
 Set-Location $InstallDir
-npm install --ignore-scripts
-npm run build
+Write-Host "Gutegura amapakeji..."
+npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
+Write-Host "Kubaka Gihanga..."
+npm run build --silent
 Push-Location "packages/coding-agent"
-npm link
+npm link --silent
 Pop-Location
 
 $GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else { Join-Path $HOME ".gihanga/agent" }

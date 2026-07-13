@@ -16,21 +16,23 @@ require_command node
 require_command npm
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-	echo "Kuvugurura Gihanga CLI muri $INSTALL_DIR"
-	git -C "$INSTALL_DIR" pull --ff-only
+	echo "Kuvugurura Gihanga..."
+	git -C "$INSTALL_DIR" pull --ff-only --quiet
 elif [ -e "$INSTALL_DIR" ]; then
 	echo "Error: $INSTALL_DIR exists but is not a git repository." >&2
 	echo "Set GIHANGA_INSTALL_DIR to another path or remove that folder." >&2
 	exit 1
 else
-	echo "Installing Gihanga CLI into $INSTALL_DIR"
-	git clone "$REPO_URL" "$INSTALL_DIR"
+	echo "Kwinjiza Gihanga..."
+	git clone --quiet "$REPO_URL" "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
-npm install --ignore-scripts
-npm run build
-(cd packages/coding-agent && npm link)
+echo "Gutegura amapakeji..."
+npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
+echo "Kubaka Gihanga..."
+npm run build --silent
+(cd packages/coding-agent && npm link --silent)
 
 GIHANGA_AGENT_DIR="${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"

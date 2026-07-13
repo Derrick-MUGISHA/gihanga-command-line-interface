@@ -18,21 +18,23 @@ require_command node
 require_command npm
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-	echo "Updating Gihanga CLI in $INSTALL_DIR"
-	git -C "$INSTALL_DIR" pull --ff-only
+	echo "Kuvugurura Gihanga..."
+	git -C "$INSTALL_DIR" pull --ff-only --quiet
 elif [ -e "$INSTALL_DIR" ]; then
 	echo "Error: $INSTALL_DIR exists but is not a git repository." >&2
 	echo "Set GIHANGA_INSTALL_DIR to another path or remove that folder." >&2
 	exit 1
 else
-	echo "Installing Gihanga CLI into $INSTALL_DIR"
-	git clone "$REPO_URL" "$INSTALL_DIR"
+	echo "Kwinjiza Gihanga..."
+	git clone --quiet "$REPO_URL" "$INSTALL_DIR"
 fi
 
 cd "$INSTALL_DIR"
-npm install --ignore-scripts
-npm run build
-(cd packages/coding-agent && npm link)
+echo "Gutegura amapakeji..."
+npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
+echo "Kubaka Gihanga..."
+npm run build --silent
+(cd packages/coding-agent && npm link --silent)
 
 GIHANGA_AGENT_DIR="\${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"
@@ -99,20 +101,22 @@ Require-Command node
 Require-Command npm
 
 if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-	Write-Host "Updating Gihanga CLI in $InstallDir"
-	git -C $InstallDir pull --ff-only
+	Write-Host "Kuvugurura Gihanga..."
+	git -C $InstallDir pull --ff-only --quiet
 } elseif (Test-Path -LiteralPath $InstallDir) {
 	throw "$InstallDir exists but is not a git repository. Set GIHANGA_INSTALL_DIR to another path or remove that folder."
 } else {
-	Write-Host "Installing Gihanga CLI into $InstallDir"
-	git clone $RepoUrl $InstallDir
+	Write-Host "Kwinjiza Gihanga..."
+	git clone --quiet $RepoUrl $InstallDir
 }
 
 Set-Location $InstallDir
-npm install --ignore-scripts
-npm run build
+Write-Host "Gutegura amapakeji..."
+npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
+Write-Host "Kubaka Gihanga..."
+npm run build --silent
 Push-Location "packages/coding-agent"
-npm link
+npm link --silent
 Pop-Location
 
 $GihangaAgentDir = if ($env:GIHANGA_AGENT_DIR) { $env:GIHANGA_AGENT_DIR } else { Join-Path $HOME ".gihanga/agent" }
