@@ -200,6 +200,14 @@ Write-Host "Kinyarwanda keyword data installed in: $GihangaAgentDir"
 Write-Host "Run: gihanga --help"
 `;
 
+const BOOTSTRAP_INSTALL_SCRIPT = `#!/usr/bin/env bash
+set -euo pipefail
+curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+`;
+
+const POWERSHELL_BOOTSTRAP_INSTALL_SCRIPT = `iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex
+`;
+
 const HOME_HTML = `<!doctype html>
 <html lang="rw" class="scroll-smooth">
 <head>
@@ -323,7 +331,7 @@ AI: Reka dusome iyi poroje...</code></pre>
               <p class="text-sm text-slate-400">Bash installer</p>
             </div>
           </div>
-          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre>
+          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>curl -fsSL https://console.upskillsafrica.org/install | bash</code></pre>
         </article>
 
         <article class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
@@ -338,7 +346,7 @@ AI: Reka dusome iyi poroje...</code></pre>
               <p class="text-sm text-slate-400">Native Windows installer</p>
             </div>
           </div>
-          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
+          <pre class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950 p-4 text-sm text-emerald-200"><code>iwr https://console.upskillsafrica.org/install-windows -UseB | iex</code></pre>
         </article>
       </div>
     </section>
@@ -478,6 +486,16 @@ function withHeaders(body: BodyInit, init: ResponseInit = {}): Response {
 export default {
 	fetch(request: Request): Response {
 		const url = new URL(request.url);
+		if (url.pathname === "/install") {
+			return withHeaders(BOOTSTRAP_INSTALL_SCRIPT, {
+				headers: { "Content-Type": "text/x-shellscript; charset=utf-8" },
+			});
+		}
+		if (url.pathname === "/install-windows") {
+			return withHeaders(POWERSHELL_BOOTSTRAP_INSTALL_SCRIPT, {
+				headers: { "Content-Type": "text/plain; charset=utf-8" },
+			});
+		}
 		if (url.pathname === "/install.sh") {
 			return withHeaders(SHELL_INSTALL_SCRIPT, {
 				headers: { "Content-Type": "text/x-shellscript; charset=utf-8" },
