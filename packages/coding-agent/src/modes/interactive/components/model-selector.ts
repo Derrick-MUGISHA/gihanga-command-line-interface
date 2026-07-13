@@ -61,6 +61,7 @@ export class ModelSelectorComponent extends Container implements Focusable {
 	private scope: ModelScope = "all";
 	private scopeText?: Text;
 	private scopeHintText?: Text;
+	private providerFilter?: (provider: string) => boolean;
 
 	constructor(
 		tui: TUI,
@@ -71,6 +72,7 @@ export class ModelSelectorComponent extends Container implements Focusable {
 		onSelect: (model: Model<any>) => void,
 		onCancel: () => void,
 		initialSearchInput?: string,
+		providerFilter?: (provider: string) => boolean,
 	) {
 		super();
 
@@ -82,6 +84,7 @@ export class ModelSelectorComponent extends Container implements Focusable {
 		this.scope = scopedModels.length > 0 ? "scoped" : "all";
 		this.onSelectCallback = onSelect;
 		this.onCancelCallback = onCancel;
+		this.providerFilter = providerFilter;
 
 		// Add top border
 		this.addChild(new DynamicBorder());
@@ -150,11 +153,13 @@ export class ModelSelectorComponent extends Container implements Focusable {
 		// Load available models (built-in models still work even if models.json failed)
 		try {
 			const availableModels = await this.modelRegistry.getAvailable();
-			models = availableModels.map((model: Model<any>) => ({
-				provider: model.provider,
-				id: model.id,
-				model,
-			}));
+			models = availableModels
+				.filter((model) => !this.providerFilter || this.providerFilter(model.provider))
+				.map((model: Model<any>) => ({
+					provider: model.provider,
+					id: model.id,
+					model,
+				}));
 		} catch (error) {
 			this.allModels = [];
 			this.scopedModelItems = [];

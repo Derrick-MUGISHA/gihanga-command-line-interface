@@ -46,6 +46,17 @@ describe("buildSystemPrompt", () => {
 			expect(prompt).toContain("- write:");
 		});
 
+		test("defaults to Kinyarwanda unless the user explicitly asks for English", () => {
+			const prompt = buildSystemPrompt({
+				contextFiles: [],
+				skills: [],
+				cwd: process.cwd(),
+			});
+
+			expect(prompt).toContain("Respond in Kinyarwanda by default");
+			expect(prompt).toContain("unless the user explicitly asks for English");
+		});
+
 		test("instructs models to resolve pi docs and examples under absolute base paths", () => {
 			const prompt = buildSystemPrompt({
 				contextFiles: [],

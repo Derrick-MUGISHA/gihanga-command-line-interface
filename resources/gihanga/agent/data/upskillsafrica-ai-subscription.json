@@ -1,0 +1,174 @@
+{
+  "name": "upskillsafrica-ai-subscription",
+  "sponsor": "Upskillsafrica Foundation",
+  "providerDisplayName": "Upskillsafrica",
+  "backendWorkerName": "upskillsafrica-ai-backend",
+  "paymentWorkerUrl": "https://rask-payment.boyg87059.workers.dev",
+  "modelSources": [
+    "upskillsafrica"
+  ],
+  "plans": [
+    {
+      "id": "thirty_minutes",
+      "amount": 3000,
+      "currency": "RWF",
+      "durationMinutes": 30,
+      "description": "3000 RWF starts 30 minutes of Upskillsafrica AI access."
+    },
+    {
+      "id": "hourly",
+      "amount": 5000,
+      "currency": "RWF",
+      "durationHours": 1,
+      "description": "5000 RWF starts one hour of Upskillsafrica AI access."
+    },
+    {
+      "id": "twelve_days",
+      "amount": 20000,
+      "currency": "RWF",
+      "periodDays": 12,
+      "gpt5HoursPerDay": 2,
+      "description": "20000 RWF gives 12 days. gpt-5 is limited; use o3, gpt-4o-mini, and OpenRouter free models for the rest of the day."
+    },
+    {
+      "id": "monthly",
+      "amount": 53000,
+      "currency": "RWF",
+      "periodDays": 30,
+      "gpt5HoursPerDay": 5,
+      "description": "53000 RWF gives 30 days with gpt-5 limited to 5 hours/day; use o3, gpt-4o-mini, and OpenRouter free models for the rest of the day."
+    }
+  ],
+  "azureProjectEndpoint": "https://ai-boyg870595858ai912957897118.services.ai.azure.com/api/projects/ai-boyg870595858ai91295-project",
+  "azureOpenAiEndpoint": "https://ai-boyg870595858ai912957897118.services.ai.azure.com/openai/v1",
+  "azureModels": [
+    {
+      "id": "o3",
+      "deployment": "o3",
+      "model": "o3",
+      "status": "Succeeded",
+      "deploymentType": "Global Standard",
+      "priceTier": "premium",
+      "capabilities": [
+        "chat",
+        "code",
+        "reasoning"
+      ]
+    },
+    {
+      "id": "gpt-4o",
+      "deployment": "gpt-4o-mini",
+      "model": "gpt-4o",
+      "status": "Succeeded",
+      "deploymentType": "Global Standard",
+      "priceTier": "premium",
+      "capabilities": [
+        "chat",
+        "code"
+      ]
+    }
+  ],
+  "excludedAzureDeployments": [
+    {
+      "deployment": "text-embedding-3-large",
+      "reason": "embedding model, not chat/code"
+    },
+    {
+      "deployment": "gpt-4o-mini-tts",
+      "reason": "TTS model, not chat/code"
+    },
+    {
+      "deployment": "sora-2",
+      "reason": "video model, not chat/code"
+    }
+  ],
+  "openrouterModels": [
+    {
+      "id": "google/gemma-4-26b-a4b-it",
+      "upstream": "openrouter/google/gemma-4-26b-a4b-it:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "google/gemma-4-31b-it",
+      "upstream": "openrouter/google/gemma-4-31b-it:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "nvidia/nemotron-3-nano-30b-a3b",
+      "upstream": "openrouter/nvidia/nemotron-3-nano-30b-a3b:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+      "upstream": "openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "nvidia/nemotron-3-super-120b-a12b",
+      "upstream": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "nvidia/nemotron-3-ultra-550b-a55b",
+      "upstream": "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "nvidia/nemotron-nano-12b-v2-vl",
+      "upstream": "openrouter/nvidia/nemotron-nano-12b-v2-vl:free",
+      "priceTier": "free"
+    },
+    {
+      "id": "openai/gpt-oss-120b",
+      "upstream": "openrouter/openai/gpt-oss-120b:free",
+      "priceTier": "free"
+    }
+  ],
+  "currency": "RWF",
+  "country": "RW",
+  "paymentMethod": "mobile_money",
+  "paymentProvider": "Paypack Rwanda",
+  "endpoints": {
+    "plans": "/plans",
+    "models": "/models",
+    "terminalPay": "/terminal/pay",
+    "credits": "/credits/{receiptRef}",
+    "chatCompletions": "/v1/chat/completions",
+    "startSubscription": "/subscription/start",
+    "verifySubscription": "/subscription/verify/{transactionRef}",
+    "initiatePayment": "/pay",
+    "verifyPayment": "/verify/{transactionRef}",
+    "webhook": "/webhook"
+  },
+  "paymentRequestShape": {
+    "plan": "thirty_minutes | hourly | twelve_days | monthly",
+    "phone": "string",
+    "transactionRef": "string optional"
+  },
+  "entitlementFlow": [
+    "User selects Upskillsafrica AI in model/provider selection.",
+    "Gihanga checks local/backend entitlement status.",
+    "If missing or expired, Gihanga asks for Rwanda mobile money phone number and starts Paypack cash-in through the payment Worker.",
+    "Gihanga polls /subscription/verify/{transactionRef} until payment is processed, cancelled, or times out.",
+    "When verified as processed/successful, backend stores an entitlement receipt and enables Upskillsafrica AI model access.",
+    "For monthly plan, backend tracks gpt-5 daily usage and resets quota each UTC day.",
+    "Organisation models require x-upskillsafrica-org-code or organisationCode in the request body."
+  ],
+  "securityNotes": [
+    "Do not store Paypack client credentials in Gihanga CLI.",
+    "Do not store Azure or OpenRouter API keys in Gihanga CLI or Git.",
+    "Azure model keys and OpenRouter keys must stay in backend Worker secrets.",
+    "Organisation code must stay in backend Worker secrets.",
+    "The payment Worker must verify webhooks before granting server-side access."
+  ],
+  "organisationModels": [
+    {
+      "id": "UAF_model_one",
+      "requiresOrgCode": true
+    },
+    {
+      "id": "uaf_model_two_alpha",
+      "requiresOrgCode": true
+    }
+  ]
+}

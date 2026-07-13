@@ -69,7 +69,7 @@ describe("AssistantMessageComponent", () => {
 		);
 		const rendered = component.render(80).join("\n");
 
-		expect(rendered).toContain("Thinking...");
+		expect(rendered).toContain("Ndigutekereza...");
 		expect(rendered).toContain("maximum output token limit");
 		expect(rendered).toContain("response may be incomplete");
 	});
@@ -84,7 +84,7 @@ describe("AssistantMessageComponent", () => {
 			]),
 			false,
 			undefined,
-			"Thinking...",
+			"Ndigutekereza...",
 			1,
 		);
 		const lines = component.render(80).map((line) => stripAnsi(line));

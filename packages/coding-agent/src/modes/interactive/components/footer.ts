@@ -44,8 +44,42 @@ export function formatCwdForFooter(cwd: string, home: string | undefined): strin
 
 const USD_TO_RWF_RATE = 1500;
 
+export const KINYARWANDA_FOOTER_SAYINGS = [
+	"Akebo kajya iwa mugarura",
+	"Ushaka inka aryama nkayo",
+	"Uwitonze akama ishashi",
+	"Iyo Gihanga icecetse, iba irimo kubaka",
+	"Kode mbi ni nka brochette idahiye: igora kuyihekenya",
+	"Nta debug iruta gusoma neza",
+	"Agaciro kari mu murimo unoze",
+] as const;
+
 function formatRwfCost(usdCost: number): string {
 	return `${Math.round(usdCost * USD_TO_RWF_RATE + 1e-9).toLocaleString()} RWF`;
+}
+
+function stableIndex(text: string, modulo: number): number {
+	let hash = 0;
+	for (const char of text) {
+		hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+	}
+	return hash % modulo;
+}
+
+function pickKinyarwandaFooterSaying(seed: string): string {
+	return (
+		KINYARWANDA_FOOTER_SAYINGS[stableIndex(seed, KINYARWANDA_FOOTER_SAYINGS.length)] ?? KINYARWANDA_FOOTER_SAYINGS[0]
+	);
+}
+
+function alignFooterLine(left: string, right: string | null | undefined, width: number): string {
+	if (!right) return truncateToWidth(left, width, "...");
+	const minGap = 2;
+	const rightWidth = visibleWidth(right);
+	const leftBudget = Math.max(1, width - rightWidth - minGap);
+	const leftText = truncateToWidth(left, leftBudget, "...");
+	const gap = Math.max(minGap, width - visibleWidth(leftText) - rightWidth);
+	return `${leftText}${" ".repeat(gap)}${right}`;
 }
 
 /**
@@ -134,28 +168,19 @@ export class FooterComponent implements Component {
 			pwd = `${pwd} • ${sessionName}`;
 		}
 
-		// Build stats line
-		const statsParts = [];
-		if (totalInput) statsParts.push(`↑${formatTokens(totalInput)}`);
-		if (totalOutput) statsParts.push(`↓${formatTokens(totalOutput)}`);
-		if (totalCacheRead) statsParts.push(`R${formatTokens(totalCacheRead)}`);
-		if (totalCacheWrite) statsParts.push(`W${formatTokens(totalCacheWrite)}`);
+		const tokenParts: string[] = [];
+		if (totalInput) tokenParts.push(`↑${formatTokens(totalInput)}`);
+		if (totalOutput) tokenParts.push(`↓${formatTokens(totalOutput)}`);
+		if (totalCacheRead) tokenParts.push(`R${formatTokens(totalCacheRead)}`);
+		if (totalCacheWrite) tokenParts.push(`W${formatTokens(totalCacheWrite)}`);
 		if ((totalCacheRead > 0 || totalCacheWrite > 0) && latestCacheHitRate !== undefined) {
-			statsParts.push(`CH${latestCacheHitRate.toFixed(1)}%`);
+			tokenParts.push(`CH${latestCacheHitRate.toFixed(1)}%`);
 		}
-		// Show cost with "(sub)" indicator if using OAuth subscription
+
 		const usingSubscription = state.model ? this.session.modelRegistry.isUsingOAuth(state.model) : false;
-		if (totalCost || usingSubscription) {
-			const costStr = `${formatRwfCost(totalCost)}${usingSubscription ? " (sub)" : ""}`;
-			statsParts.push(costStr);
-		}
-
+		const costStr = `${formatRwfCost(totalCost)}${usingSubscription ? " (sub)" : ""}`;
 		const kigaliWeather = this.footerData.getKigaliWeather();
-		if (kigaliWeather) {
-			statsParts.push(kigaliWeather);
-		}
 
-		// Colorize context percentage based on usage
 		let contextPercentStr: string;
 		const autoIndicator = this.autoCompactEnabled ? " (auto)" : "";
 		const contextPercentDisplay =
@@ -169,76 +194,27 @@ export class FooterComponent implements Component {
 		} else {
 			contextPercentStr = contextPercentDisplay;
 		}
-		statsParts.push(contextPercentStr);
-		if (areExperimentalFeaturesEnabled()) {
-			statsParts.push(`${theme.fg("dim", "•")} ${theme.bold(theme.fg("warning", "xp"))}`);
-		}
 
-		let statsLeft = statsParts.join(" ");
-
-		// Add model name on the right side, plus thinking level if model supports it
 		const modelName = state.model?.id || "no-model";
-
-		let statsLeftWidth = visibleWidth(statsLeft);
-
-		// If statsLeft is too wide, truncate it
-		if (statsLeftWidth > width) {
-			statsLeft = truncateToWidth(statsLeft, width, "...");
-			statsLeftWidth = visibleWidth(statsLeft);
-		}
-
-		// Calculate available space for padding (minimum 2 spaces between stats and model)
-		const minPadding = 2;
-
-		// Add thinking level indicator if model supports reasoning
-		let rightSideWithoutProvider = modelName;
+		let modelPart = modelName;
 		if (state.model?.reasoning) {
 			const thinkingLevel = state.thinkingLevel || "off";
-			rightSideWithoutProvider =
-				thinkingLevel === "off" ? `${modelName} • thinking off` : `${modelName} • ${thinkingLevel}`;
-		}
-
-		// Prepend the provider in parentheses if there are multiple providers and there's enough room
-		let rightSide = rightSideWithoutProvider;
-		if (this.footerData.getAvailableProviderCount() > 1 && state.model) {
-			rightSide = `(${state.model!.provider}) ${rightSideWithoutProvider}`;
-			if (statsLeftWidth + minPadding + visibleWidth(rightSide) > width) {
-				// Too wide, fall back
-				rightSide = rightSideWithoutProvider;
+			if (thinkingLevel !== "off") {
+				modelPart = `${modelName} · ${thinkingLevel}`;
 			}
 		}
 
-		const rightSideWidth = visibleWidth(rightSide);
-		const totalNeeded = statsLeftWidth + minPadding + rightSideWidth;
-
-		let statsLine: string;
-		if (totalNeeded <= width) {
-			// Both fit - add padding to right-align model
-			const padding = " ".repeat(width - statsLeftWidth - rightSideWidth);
-			statsLine = statsLeft + padding + rightSide;
-		} else {
-			// Need to truncate right side
-			const availableForRight = width - statsLeftWidth - minPadding;
-			if (availableForRight > 0) {
-				const truncatedRight = truncateToWidth(rightSide, availableForRight, "");
-				const truncatedRightWidth = visibleWidth(truncatedRight);
-				const padding = " ".repeat(Math.max(0, width - statsLeftWidth - truncatedRightWidth));
-				statsLine = statsLeft + padding + truncatedRight;
-			} else {
-				// Not enough space for right side at all
-				statsLine = statsLeft;
-			}
+		const footerSaying = pickKinyarwandaFooterSaying(`${pwd}:${sessionName}`);
+		const titleText = alignFooterLine(`╭─ Gihanga kumurimo · ${pwd}`, footerSaying, width);
+		const statsParts = [modelPart, contextPercentStr, tokenParts.join(" "), costStr].filter(
+			(part): part is string => typeof part === "string" && part.length > 0,
+		);
+		if (areExperimentalFeaturesEnabled()) {
+			statsParts.push("xp");
 		}
+		const statsText = alignFooterLine(`╰─ ${statsParts.join(" · ")}`, kigaliWeather, width);
 
-		// Apply dim to each part separately. statsLeft may contain color codes (for context %)
-		// that end with a reset, which would clear an outer dim wrapper. So we dim the parts
-		// before and after the colored section independently.
-		const dimStatsLeft = theme.fg("dim", statsLeft);
-		const remainder = statsLine.slice(statsLeft.length); // padding + rightSide
-		const dimRemainder = theme.fg("dim", remainder);
-
-		const pwdLine = truncateToWidth(theme.fg("dim", pwd), width, theme.fg("dim", "..."));
-		const lines = [pwdLine, dimStatsLeft + dimRemainder];
+		const lines = [theme.fg("dim", titleText), theme.fg("dim", statsText)];
 
 		// Add extension statuses on a single line, sorted by key alphabetically
 		const extensionStatuses = this.footerData.getExtensionStatuses();

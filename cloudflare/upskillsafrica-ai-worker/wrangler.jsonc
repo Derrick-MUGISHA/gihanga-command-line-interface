@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "upskillsafrica-ai-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-12",
+  "vars": {
+    "PAYMENT_WORKER_URL": "https://rask-payment.boyg87059.workers.dev",
+    "SUBSCRIPTION_AMOUNT_RWF": "5000",
+    "MONTHLY_SUBSCRIPTION_AMOUNT_RWF": "53000",
+    "SUBSCRIPTION_DAYS": "30",
+    "MONTHLY_GPT5_HOURS_PER_DAY": "5",
+    "AZURE_AI_PROJECT_ENDPOINT": "https://ai-boyg870595858ai912957897118.services.ai.azure.com/api/projects/ai-boyg870595858ai91295-project",
+    "AZURE_OPENAI_ENDPOINT": "https://ai-boyg870595858ai912957897118.services.ai.azure.com/openai/v1",
+    "ORG_AZURE_AI_PROJECT_ENDPOINT": "https://rask-resource.services.ai.azure.com/api/projects/rask",
+    "ORG_AZURE_OPENAI_ENDPOINT": "https://rask-resource.services.ai.azure.com/openai/v1",
+    "AZURE_OPENAI_API_VERSION": "2024-10-21",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-4o-mini",
+    "UPSKILLS_AZURE_MODELS": "[{\"id\":\"o3\",\"name\":\"o3\",\"deployment\":\"o3\",\"model\":\"o3\",\"status\":\"Succeeded\",\"deploymentType\":\"Global Standard\",\"priceTier\":\"premium\"},{\"id\":\"gpt-4o\",\"name\":\"gpt-4o\",\"deployment\":\"gpt-4o-mini\",\"model\":\"gpt-4o\",\"status\":\"Succeeded\",\"deploymentType\":\"Global Standard\",\"priceTier\":\"premium\"},{\"id\":\"UAF_model_one\",\"name\":\"UAF_model_one\",\"deployment\":\"gpt-5.5\",\"model\":\"UAF_model_one\",\"status\":\"Succeeded\",\"deploymentType\":\"Global Standard\",\"priceTier\":\"premium\",\"requiresOrgCode\":true},{\"id\":\"uaf_model_two_alpha\",\"name\":\"uaf_model_two_alpha\",\"deployment\":\"gpt-5.6-luna\",\"model\":\"uaf_model_two_alpha\",\"status\":\"Succeeded\",\"deploymentType\":\"Global Standard\",\"priceTier\":\"premium\",\"requiresOrgCode\":true}]",
+    "UPSKILLS_OPENROUTER_MODELS": "[]"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "ENTITLEMENTS",
+      "id": "8a9637f521224163b8f71b422bac31a4",
+      "preview_id": "4c61386e81f244c8a7d38781a1296ea0"
+    }
+  ]
+}

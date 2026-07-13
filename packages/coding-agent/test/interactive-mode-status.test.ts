@@ -7,7 +7,13 @@ import { VirtualTerminal } from "../../tui/test/virtual-terminal.ts";
 import type { AutocompleteProviderFactory } from "../src/core/extensions/types.ts";
 import type { SourceInfo } from "../src/core/source-info.ts";
 import type { AuthSelectorProvider } from "../src/modes/interactive/components/oauth-selector.ts";
-import { InteractiveMode } from "../src/modes/interactive/interactive-mode.ts";
+import {
+	formatUpskillsAfricaPlanLabel,
+	getUpskillsAfricaAccountActionLabels,
+	getUpskillsAfricaPaymentFlowLabels,
+	InteractiveMode,
+	isGihangaAllowedModelProvider,
+} from "../src/modes/interactive/interactive-mode.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 
 function renderLastLine(container: Container, width = 120): string {
@@ -463,7 +469,7 @@ describe("InteractiveMode.createBaseAutocompleteProvider", () => {
 				{ id: "openai", name: "OpenAI", authType: "api_key" },
 				{
 					id: "upskillsafrica-rask-d-technology",
-					name: "UpSkills Africa / Rask-D Technology",
+					name: "Upskillsafrica / Rask-D Technology",
 					authType: "api_key",
 					comingSoon: true,
 				},
@@ -483,6 +489,45 @@ describe("InteractiveMode.createBaseAutocompleteProvider", () => {
 				description: "Anthropic · API key",
 			},
 		]);
+	});
+	test("curates Gihanga model providers to popular, NVIDIA, Minimax, and Chinese providers", () => {
+		expect(isGihangaAllowedModelProvider("nvidia")).toBe(true);
+		expect(isGihangaAllowedModelProvider("minimax")).toBe(true);
+		expect(isGihangaAllowedModelProvider("minimax-cn")).toBe(true);
+		expect(isGihangaAllowedModelProvider("zai-coding-cn")).toBe(true);
+		expect(isGihangaAllowedModelProvider("moonshotai-cn")).toBe(true);
+		expect(isGihangaAllowedModelProvider("anthropic")).toBe(true);
+		expect(isGihangaAllowedModelProvider("upskillsafrica")).toBe(true);
+		expect(isGihangaAllowedModelProvider("xai")).toBe(false);
+		expect(isGihangaAllowedModelProvider("groq")).toBe(false);
+		expect(isGihangaAllowedModelProvider("cerebras")).toBe(false);
+		expect(isGihangaAllowedModelProvider("together")).toBe(false);
+		expect(isGihangaAllowedModelProvider("fireworks")).toBe(false);
+		expect(isGihangaAllowedModelProvider("github-copilot")).toBe(false);
+		expect(isGihangaAllowedModelProvider("upskillsafrica-rask-d-technology")).toBe(false);
+		expect(isGihangaAllowedModelProvider("amazon-bedrock")).toBe(false);
+		expect(isGihangaAllowedModelProvider("huggingface")).toBe(false);
+	});
+
+	test("Upskillsafrica account actions expose login, register, and organisation code", () => {
+		expect(getUpskillsAfricaAccountActionLabels()).toEqual([
+			"Login to Upskillsafrica",
+			"Register Upskillsafrica account",
+			"Add organisation code",
+		]);
+	});
+
+	test("Upskillsafrica payment flow labels are compact Kinyarwanda terminal copy", () => {
+		expect(getUpskillsAfricaPaymentFlowLabels()).toEqual({
+			choosePlan: "Hitamo gahunda ya Upskillsafrica:",
+			phonePrompt: "Nimero ya Mobile Money:",
+			confirmOnPhone: "Emeza ubwishyu kuri telefoni yawe...",
+			waiting: "Ndacyategereje kwemeza ubwishyu...",
+			paid: "Ubwishyu bwemejwe. Hitamo model.",
+		});
+		expect(formatUpskillsAfricaPlanLabel({ id: "thirty_minutes", amountRwf: 3000 })).toBe(
+			"thirty_minutes · 3,000 RWF",
+		);
 	});
 });
 describe("InteractiveMode.showLoadedResources", () => {

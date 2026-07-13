@@ -38,6 +38,9 @@ GIHANGA_AGENT_DIR="\${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"
 cp -R "$INSTALL_DIR/resources/gihanga/agent/skills/gihanga-community" "$GIHANGA_AGENT_DIR/skills/"
 cp "$INSTALL_DIR"/resources/gihanga/agent/data/* "$GIHANGA_AGENT_DIR/data/"
+if [ -f "$INSTALL_DIR/resources/gihanga/agent/models.json" ]; then
+	cp "$INSTALL_DIR/resources/gihanga/agent/models.json" "$GIHANGA_AGENT_DIR/models.json"
+fi
 cp "$INSTALL_DIR"/resources/gihanga/agent/scripts/* "$GIHANGA_AGENT_DIR/scripts/"
 
 if [ "\${GIHANGA_INSTALL_MBAZA_NLP:-0}" = "1" ] || [ "\${GIHANGA_INSTALL_MBAZA_NLP:-}" = "true" ]; then
@@ -118,6 +121,10 @@ New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "data") | 
 New-Item -ItemType Directory -Force -Path (Join-Path $GihangaAgentDir "scripts") | Out-Null
 Copy-Item -Recurse -Force (Join-Path $InstallDir "resources/gihanga/agent/skills/gihanga-community") (Join-Path $GihangaAgentDir "skills")
 Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/data/*") (Join-Path $GihangaAgentDir "data")
+$ModelsJson = Join-Path $InstallDir "resources/gihanga/agent/models.json"
+if (Test-Path -LiteralPath $ModelsJson) {
+	Copy-Item -Force $ModelsJson (Join-Path $GihangaAgentDir "models.json")
+}
 Copy-Item -Force (Join-Path $InstallDir "resources/gihanga/agent/scripts/*") (Join-Path $GihangaAgentDir "scripts")
 
 if ($env:GIHANGA_INSTALL_MBAZA_NLP -eq "1" -or $env:GIHANGA_INSTALL_MBAZA_NLP -eq "true") {
@@ -354,13 +361,72 @@ AI: Reka dusome iyi poroje...</code></pre>
 
   <footer class="relative mx-auto max-w-7xl px-6 py-10 text-sm text-slate-500 lg:px-8">
     <div class="flex flex-col justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
-      <p>Gihanga CLI - UpSkills Africa console.</p>
+      <p>Gihanga CLI - Upskillsafrica console.</p>
       <a class="text-slate-300 hover:text-white" href="${REPO_URL.replace(".git", "")}">GitHub repository</a>
     </div>
   </footer>
   <script>
     lucide.createIcons();
   </script>
+</body>
+</html>`;
+
+const CREDITS_HTML = `<!doctype html>
+<html lang="rw">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upskillsafrica AI Credits</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <main class="mx-auto max-w-5xl px-6 py-12">
+    <a href="/" class="text-sm text-emerald-300 hover:text-emerald-200">← Gihanga Console</a>
+    <section class="mt-8 rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+      <p class="text-sm uppercase tracking-[0.2em] text-emerald-300">Upskillsafrica AI</p>
+      <h1 class="mt-3 text-4xl font-black">Credits na Mobile Money</h1>
+      <p class="mt-3 max-w-2xl text-slate-300">Pay through terminal or web, then use your receipt reference to check credits and model access.</p>
+      <div class="mt-8 grid gap-4 md:grid-cols-2">
+        <label class="block"><span class="text-sm text-slate-300">Phone number</span><input id="phone" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="078..." /></label>
+        <label class="block"><span class="text-sm text-slate-300">Plan</span><select id="plan" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3"></select></label>
+      </div>
+      <button id="pay" class="mt-5 rounded-xl bg-emerald-400 px-5 py-3 font-bold text-slate-950 hover:bg-emerald-300">Start payment</button>
+      <pre id="paymentResult" class="mt-5 overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm text-emerald-200"></pre>
+    </section>
+    <section class="mt-6 rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+      <h2 class="text-2xl font-bold">Check credits</h2>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" class="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3" placeholder="receipt / transaction ref" /><button id="check" class="rounded-xl bg-cyan-300 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-200">Check</button></div>
+      <pre id="creditsResult" class="mt-5 overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm text-cyan-100"></pre>
+    </section>
+  </main>
+<script>
+const API = 'https://upskillsafrica-ai-backend.boyg87059.workers.dev';
+const planSelect = document.getElementById('plan');
+const paymentResult = document.getElementById('paymentResult');
+const creditsResult = document.getElementById('creditsResult');
+function show(el, value) { el.textContent = JSON.stringify(value, null, 2); }
+async function loadPlans() {
+  const data = await fetch(API + '/plans').then(r => r.json());
+  for (const plan of data.plans || []) {
+    const option = document.createElement('option');
+    option.value = plan.id;
+    option.textContent = plan.id + ' - ' + plan.amountRwf + ' RWF';
+    planSelect.appendChild(option);
+  }
+}
+document.getElementById('pay').addEventListener('click', async () => {
+  const phone = document.getElementById('phone').value.trim();
+  const plan = planSelect.value;
+  const res = await fetch(API + '/terminal/pay', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone, plan }) });
+  show(paymentResult, await res.json());
+});
+document.getElementById('check').addEventListener('click', async () => {
+  const receipt = document.getElementById('receipt').value.trim();
+  const res = await fetch(API + '/credits/' + encodeURIComponent(receipt));
+  show(creditsResult, await res.json());
+});
+loadPlans().catch(error => show(paymentResult, { error: String(error) }));
+</script>
 </body>
 </html>`;
 
@@ -386,6 +452,11 @@ export default {
 		}
 		if (url.pathname === "/" || url.pathname === "/index.html") {
 			return withHeaders(HOME_HTML, {
+				headers: { "Content-Type": "text/html; charset=utf-8" },
+			});
+		}
+		if (url.pathname === "/credits" || url.pathname === "/credits.html") {
+			return withHeaders(CREDITS_HTML, {
 				headers: { "Content-Type": "text/html; charset=utf-8" },
 			});
 		}

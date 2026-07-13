@@ -123,6 +123,7 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 
 	// Always include these
 	addGuideline("Be concise in your responses");
+	addGuideline("Respond in Kinyarwanda by default unless the user explicitly asks for English.");
 	addGuideline("Show file paths clearly when working with files");
 
 	const guidelines = guidelinesList.map((g) => `- ${g}`).join("\n");

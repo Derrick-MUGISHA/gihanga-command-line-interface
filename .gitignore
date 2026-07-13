@@ -11,6 +11,8 @@ packages/*/dist-firefox/
 
 # Environment
 .env
+.dev.vars*
+!.dev.vars.example
 
 # Editor files
 .vscode/

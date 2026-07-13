@@ -250,6 +250,53 @@ function hasDefaultModelProvider(providerId: string): providerId is keyof typeof
 
 const BUILT_IN_MODEL_PROVIDERS = new Set<string>(getProviders());
 
+export const GIHANGA_ALLOWED_PROVIDER_IDS = new Set([
+	"anthropic",
+	"openai",
+	"google",
+	"google-vertex",
+	"openrouter",
+	"vercel-ai-gateway",
+	"nvidia",
+	"minimax",
+	"minimax-cn",
+	"zai",
+	"zai-coding-cn",
+	"kimi-coding",
+	"moonshotai",
+	"moonshotai-cn",
+	"deepseek",
+	"upskillsafrica",
+]);
+
+export function isGihangaAllowedModelProvider(providerId: string): boolean {
+	return GIHANGA_ALLOWED_PROVIDER_IDS.has(providerId);
+}
+
+export function getUpskillsAfricaAccountActionLabels(): string[] {
+	return ["Login to Upskillsafrica", "Register Upskillsafrica account", "Add organisation code"];
+}
+
+export function getUpskillsAfricaPaymentFlowLabels(): {
+	choosePlan: string;
+	phonePrompt: string;
+	confirmOnPhone: string;
+	waiting: string;
+	paid: string;
+} {
+	return {
+		choosePlan: "Hitamo gahunda ya Upskillsafrica:",
+		phonePrompt: "Nimero ya Mobile Money:",
+		confirmOnPhone: "Emeza ubwishyu kuri telefoni yawe...",
+		waiting: "Ndacyategereje kwemeza ubwishyu...",
+		paid: "Ubwishyu bwemejwe. Hitamo model.",
+	};
+}
+
+export function formatUpskillsAfricaPlanLabel(plan: { id: string; amountRwf: number }): string {
+	return `${plan.id} · ${plan.amountRwf.toLocaleString()} RWF`;
+}
+
 export function isApiKeyLoginProvider(
 	providerId: string,
 	oauthProviderIds: ReadonlySet<string>,
@@ -271,19 +318,36 @@ type LoginProviderCompletionOption = {
 	comingSoon?: boolean;
 };
 
+type UpskillsAfricaPlan = { id: string; amountRwf: number };
+
+type UpskillsAfricaPaymentStartResponse = {
+	transactionRef?: string;
+	message?: string;
+	entitlement?: unknown;
+	payment?: { status?: string; message?: string };
+};
+
+type UpskillsAfricaVerifyResponse = {
+	status?: string;
+	message?: string;
+	entitlement?: unknown;
+};
+
+function wait(ms: number): Promise<void> {
+	return new Promise((resolvePromise) => setTimeout(resolvePromise, ms));
+}
+
 const AUTH_TYPE_ORDER = { oauth: 0, api_key: 1 } satisfies Record<AuthSelectorProvider["authType"], number>;
+const UPSKILLS_AFRICA_PROVIDER_ID = "upskillsafrica-rask-d-technology";
+const UPSKILLS_AFRICA_MODEL_PROVIDER_ID = "upskillsafrica";
+const UPSKILLS_AFRICA_PROVIDER_NAME = "Upskillsafrica AI";
+const UPSKILLS_AFRICA_BACKEND_URL = "https://upskillsafrica-ai-backend.boyg87059.workers.dev";
+
 const UPSKILLS_AFRICA_PROVIDER_OPTIONS = [
 	{
-		id: "upskillsafrica-rask-d-technology",
-		name: "UpSkills Africa / Rask-D Technology",
+		id: UPSKILLS_AFRICA_PROVIDER_ID,
+		name: UPSKILLS_AFRICA_PROVIDER_NAME,
 		authType: "api_key",
-		comingSoon: true,
-	},
-	{
-		id: "upskillsafrica-replysuite-assistant",
-		name: "UpSkills Africa / ReplySuite Assistant",
-		authType: "api_key",
-		comingSoon: true,
 	},
 ] satisfies AuthSelectorProvider[];
 
@@ -396,8 +460,8 @@ export class InteractiveMode {
 	private workingMessage: string | undefined = undefined;
 	private workingVisible = true;
 	private workingIndicatorOptions: WorkingIndicatorOptions | undefined = undefined;
-	private readonly defaultWorkingMessage = "Working...";
-	private readonly defaultHiddenThinkingLabel = "Thinking...";
+	private readonly defaultWorkingMessage = "Ndahuze...";
+	private readonly defaultHiddenThinkingLabel = "Ndigutekereza...";
 	private hiddenThinkingLabel = this.defaultHiddenThinkingLabel;
 
 	private lastSigintTime = 0;
@@ -791,11 +855,11 @@ export class InteractiveMode {
 				hint("app.exit", "to exit (empty)"),
 				hint("app.suspend", "to suspend"),
 				keyHint("tui.editor.deleteToLineEnd", "to delete to end"),
-				hint("app.thinking.cycle", "to cycle thinking level"),
+				hint("app.thinking.cycle", "to change gutekereza level"),
 				rawKeyHint(`${keyText("app.model.cycleForward")}/${keyText("app.model.cycleBackward")}`, "to cycle models"),
 				hint("app.model.select", "to select model"),
 				hint("app.tools.expand", "to expand tools"),
-				hint("app.thinking.toggle", "to expand thinking"),
+				hint("app.thinking.toggle", "to expand gutekereza"),
 				hint("app.editor.external", "for external editor"),
 				rawKeyHint("/", "for commands"),
 				rawKeyHint("!", "to run bash"),
@@ -824,7 +888,7 @@ export class InteractiveMode {
 			].join("\n");
 			const onboarding = theme.fg(
 				"dim",
-				`Gihanga can explain its features and help with kode, providers, and ubumenyi.`,
+				`Gihanga can explain its features and help with kode, providers, and ubumenyi.\nSponsored by Upskillsafrica Foundation.`,
 			);
 			this.builtInHeader = new ExpandableText(
 				() => `${rwandaVector}\n${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${onboarding}`,
@@ -3770,11 +3834,11 @@ export class InteractiveMode {
 	private cycleThinkingLevel(): void {
 		const newLevel = this.session.cycleThinkingLevel();
 		if (newLevel === undefined) {
-			this.showStatus("Current model does not support thinking");
+			this.showStatus("Iyi model ntabwo ishyigikira gutekereza");
 		} else {
 			this.footer.invalidate();
 			this.updateEditorBorderColor();
-			this.showStatus(`Thinking level: ${newLevel}`);
+			this.showStatus(`Urwego rwo gutekereza: ${newLevel}`);
 		}
 	}
 
@@ -3788,7 +3852,7 @@ export class InteractiveMode {
 				this.footer.invalidate();
 				this.updateEditorBorderColor();
 				const thinkingStr =
-					result.model.reasoning && result.thinkingLevel !== "off" ? ` (thinking: ${result.thinkingLevel})` : "";
+					result.model.reasoning && result.thinkingLevel !== "off" ? ` (gutekereza: ${result.thinkingLevel})` : "";
 				this.showStatus(`Switched to ${result.model.name || result.model.id}${thinkingStr}`);
 				void this.maybeWarnAboutAnthropicSubscriptionAuth(result.model);
 			}
@@ -3832,7 +3896,7 @@ export class InteractiveMode {
 			this.chatContainer.addChild(this.streamingComponent);
 		}
 
-		this.showStatus(`Thinking blocks: ${this.hideThinkingBlock ? "hidden" : "visible"}`);
+		this.showStatus(`Ibice byo gutekereza: ${this.hideThinkingBlock ? "byahishwe" : "biragaragara"}`);
 	}
 
 	private async openExternalEditor(): Promise<void> {
@@ -4377,7 +4441,9 @@ export class InteractiveMode {
 
 		this.session.modelRegistry.refresh();
 		try {
-			return await this.session.modelRegistry.getAvailable();
+			return (await this.session.modelRegistry.getAvailable()).filter((model) =>
+				isGihangaAllowedModelProvider(model.provider),
+			);
 		} catch {
 			return [];
 		}
@@ -4500,6 +4566,7 @@ export class InteractiveMode {
 					this.ui.requestRender();
 				},
 				initialSearchInput,
+				isGihangaAllowedModelProvider,
 			);
 			return { component: selector, focus: selector };
 		});
@@ -4859,7 +4926,7 @@ export class InteractiveMode {
 
 		const modelProviders = new Set(this.session.modelRegistry.getAll().map((model) => model.provider));
 		for (const providerId of modelProviders) {
-			if (!isApiKeyLoginProvider(providerId, oauthProviderIds)) {
+			if (!isGihangaAllowedModelProvider(providerId) || !isApiKeyLoginProvider(providerId, oauthProviderIds)) {
 				continue;
 			}
 			options.push({
@@ -4933,6 +5000,10 @@ export class InteractiveMode {
 	}
 
 	private async startProviderLogin(providerOption: AuthSelectorProvider): Promise<void> {
+		if (providerOption.id === UPSKILLS_AFRICA_PROVIDER_ID) {
+			this.showUpskillsAfricaAccountSelector();
+			return;
+		}
 		if (providerOption.comingSoon) {
 			this.showStatus(`${providerOption.name} is coming soon.`);
 			return;
@@ -4946,7 +5017,7 @@ export class InteractiveMode {
 
 	private showLoginAuthTypeSelector(providerOptions?: AuthSelectorProvider[]): void {
 		const apiKeyLabel = "Use an API key";
-		const upskillsAfricaLabel = "Use UpSkills Africa provider";
+		const upskillsAfricaLabel = "Use Upskillsafrica provider";
 		const options: string[] = [apiKeyLabel, upskillsAfricaLabel];
 
 		if (providerOptions) {
@@ -4967,7 +5038,7 @@ export class InteractiveMode {
 				(option) => {
 					done();
 					if (option === upskillsAfricaLabel) {
-						this.showLoginProviderSelector("api_key", undefined, UPSKILLS_AFRICA_PROVIDER_OPTIONS);
+						this.showUpskillsAfricaAccountSelector();
 					} else {
 						this.showLoginProviderSelector("api_key");
 					}
@@ -4979,6 +5050,268 @@ export class InteractiveMode {
 			);
 			return { component: selector, focus: selector };
 		});
+	}
+
+	private showUpskillsAfricaAccountSelector(): void {
+		const [loginLabel, registerLabel, organisationLabel] = getUpskillsAfricaAccountActionLabels();
+		this.showSelector((done) => {
+			const selector = new ExtensionSelectorComponent(
+				"Upskillsafrica account:",
+				[loginLabel, registerLabel, organisationLabel],
+				(option) => {
+					done();
+					if (option === organisationLabel) {
+						void this.showUpskillsAfricaOrganisationCodeDialog();
+						return;
+					}
+					void this.showUpskillsAfricaAccountDialog(option === registerLabel ? "register" : "login");
+				},
+				() => {
+					done();
+					this.ui.requestRender();
+				},
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
+	private async showUpskillsAfricaAccountDialog(mode: "login" | "register"): Promise<void> {
+		const dialog = new LoginDialogComponent(
+			this.ui,
+			UPSKILLS_AFRICA_PROVIDER_ID,
+			(_success, _message) => {},
+			UPSKILLS_AFRICA_PROVIDER_NAME,
+			mode === "register" ? "Register Upskillsafrica account" : "Login to Upskillsafrica",
+		);
+		this.editorContainer.clear();
+		this.editorContainer.addChild(dialog);
+		this.ui.setFocus(dialog);
+		this.ui.requestRender();
+
+		const restoreEditor = () => {
+			this.editorContainer.clear();
+			this.editorContainer.addChild(this.editor);
+			this.ui.setFocus(this.editor);
+			this.ui.requestRender();
+		};
+
+		try {
+			const email = (await dialog.showPrompt("Email:")).trim();
+			const password = (await dialog.showPrompt("Password (visible while typing):")).trim();
+			if (!email || !password) throw new Error("Email and password are required.");
+			const payload: Record<string, string> = { email, password };
+			if (mode === "register") {
+				const confirmPassword = (await dialog.showPrompt("Confirm password (visible while typing):")).trim();
+				payload.confirmPassword = confirmPassword;
+			}
+			const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/auth/${mode}`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			});
+			const data = (await response.json()) as { token?: string; message?: string; user?: { email?: string } };
+			if (!response.ok || !data.token) {
+				throw new Error(data.message || `Upskillsafrica ${mode} failed.`);
+			}
+			this.saveUpskillsAfricaCredentials(data.token);
+			restoreEditor();
+			this.session.modelRegistry.refresh();
+			await this.updateAvailableProviderCount();
+			this.showStatus(`Logged in to ${UPSKILLS_AFRICA_PROVIDER_NAME}. Credentials saved to ${getAuthPath()}`);
+			await this.showUpskillsAfricaSubscriptionStatus(data.token, data.user?.email || email);
+		} catch (error: unknown) {
+			restoreEditor();
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			if (errorMsg !== "Login cancelled") this.showError(`Upskillsafrica ${mode} failed: ${errorMsg}`);
+		}
+	}
+
+	private saveUpskillsAfricaCredentials(token?: string, organisationCode?: string): void {
+		const existingAccount = this.session.modelRegistry.authStorage.get(UPSKILLS_AFRICA_PROVIDER_ID);
+		const existingModel = this.session.modelRegistry.authStorage.get(UPSKILLS_AFRICA_MODEL_PROVIDER_ID);
+		const resolvedToken =
+			token ||
+			(existingModel?.type === "api_key" ? existingModel.key : undefined) ||
+			(existingAccount?.type === "api_key" ? existingAccount.key : undefined);
+		if (!resolvedToken) {
+			throw new Error("Login first before saving organisation code.");
+		}
+		const existingEnv = {
+			...(existingAccount?.type === "api_key" ? existingAccount.env : {}),
+			...(existingModel?.type === "api_key" ? existingModel.env : {}),
+		};
+		const env = {
+			...existingEnv,
+			UPSKILLSAFRICA_BACKEND_URL: UPSKILLS_AFRICA_BACKEND_URL,
+			...(organisationCode ? { UPSKILLSAFRICA_ORG_CODE: organisationCode } : {}),
+		};
+		for (const providerId of [UPSKILLS_AFRICA_PROVIDER_ID, UPSKILLS_AFRICA_MODEL_PROVIDER_ID]) {
+			this.session.modelRegistry.authStorage.set(providerId, { type: "api_key", key: resolvedToken, env });
+		}
+	}
+
+	private async showUpskillsAfricaOrganisationCodeDialog(): Promise<void> {
+		const dialog = new LoginDialogComponent(
+			this.ui,
+			UPSKILLS_AFRICA_PROVIDER_ID,
+			(_success, _message) => {},
+			UPSKILLS_AFRICA_PROVIDER_NAME,
+			"Upskillsafrica organisation code",
+		);
+		this.editorContainer.clear();
+		this.editorContainer.addChild(dialog);
+		this.ui.setFocus(dialog);
+		this.ui.requestRender();
+		const restoreEditor = () => {
+			this.editorContainer.clear();
+			this.editorContainer.addChild(this.editor);
+			this.ui.setFocus(this.editor);
+			this.ui.requestRender();
+		};
+		try {
+			const organisationCode = (await dialog.showPrompt("Organisation code:")).trim();
+			if (!organisationCode) throw new Error("Organisation code is required.");
+			this.saveUpskillsAfricaCredentials(undefined, organisationCode);
+			restoreEditor();
+			this.session.modelRegistry.refresh();
+			await this.updateAvailableProviderCount();
+			this.showStatus("Upskillsafrica organisation code saved. Choose an organisation model to continue.");
+			this.showModelSelector("upskillsafrica");
+		} catch (error: unknown) {
+			restoreEditor();
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			if (errorMsg !== "Login cancelled") this.showError(`Failed to save organisation code: ${errorMsg}`);
+		}
+	}
+
+	private async showUpskillsAfricaSubscriptionStatus(token: string, email: string): Promise<void> {
+		try {
+			const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/auth/me`, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			const data = (await response.json()) as {
+				entitlements?: unknown[];
+				plans?: UpskillsAfricaPlan[];
+				message?: string;
+			};
+			if ((data.entitlements || []).length > 0) {
+				this.showStatus(`Upskillsafrica logged in as ${email}. Subscription active. Choose a model to continue.`);
+				this.showModelSelector();
+				return;
+			}
+			const plans = data.plans || [];
+			const planText = plans.map(formatUpskillsAfricaPlanLabel).join(", ");
+			this.showWarning(
+				`Upskillsafrica logged in as ${email}, but no active subscription was found. ${planText || "No plans returned."}`,
+			);
+			if (plans.length > 0) {
+				this.showUpskillsAfricaPlanSelector(token, email, plans);
+			}
+		} catch (error) {
+			this.showWarning(
+				`Upskillsafrica login saved, but subscription check failed: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	private showUpskillsAfricaPlanSelector(token: string, email: string, plans: UpskillsAfricaPlan[]): void {
+		const labels = getUpskillsAfricaPaymentFlowLabels();
+		const options = plans.map(formatUpskillsAfricaPlanLabel);
+		this.showSelector((done) => {
+			const selector = new ExtensionSelectorComponent(
+				labels.choosePlan,
+				options,
+				(option) => {
+					done();
+					const selectedIndex = options.indexOf(option);
+					const selectedPlan = plans[selectedIndex];
+					if (selectedPlan) {
+						void this.showUpskillsAfricaPaymentDialog(token, email, selectedPlan);
+					}
+				},
+				() => {
+					done();
+					this.ui.requestRender();
+				},
+			);
+			return { component: selector, focus: selector };
+		});
+	}
+
+	private async showUpskillsAfricaPaymentDialog(
+		token: string,
+		email: string,
+		plan: UpskillsAfricaPlan,
+	): Promise<void> {
+		const labels = getUpskillsAfricaPaymentFlowLabels();
+		const dialog = new LoginDialogComponent(
+			this.ui,
+			UPSKILLS_AFRICA_PROVIDER_ID,
+			(_success, _message) => {},
+			UPSKILLS_AFRICA_PROVIDER_NAME,
+			`${labels.choosePlan} ${formatUpskillsAfricaPlanLabel(plan)}`,
+		);
+		this.editorContainer.clear();
+		this.editorContainer.addChild(dialog);
+		this.ui.setFocus(dialog);
+		this.ui.requestRender();
+		const restoreEditor = () => {
+			this.editorContainer.clear();
+			this.editorContainer.addChild(this.editor);
+			this.ui.setFocus(this.editor);
+			this.ui.requestRender();
+		};
+		try {
+			const phone = (await dialog.showPrompt(labels.phonePrompt, "078...")).trim();
+			if (!phone) throw new Error("Nimero ya Mobile Money irakenewe.");
+			restoreEditor();
+			this.showStatus(labels.confirmOnPhone);
+			const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/terminal/pay`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				body: JSON.stringify({ phone, plan: plan.id }),
+			});
+			const data = (await response.json()) as UpskillsAfricaPaymentStartResponse;
+			if (!response.ok) {
+				throw new Error(data.message || data.payment?.message || "Payment request failed.");
+			}
+			if (data.entitlement) {
+				this.showStatus(labels.paid);
+				await this.showUpskillsAfricaSubscriptionStatus(token, email);
+				return;
+			}
+			if (!data.transactionRef) {
+				throw new Error("Payment reference missing.");
+			}
+			await this.pollUpskillsAfricaPayment(token, email, data.transactionRef);
+		} catch (error: unknown) {
+			restoreEditor();
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			if (errorMsg !== "Login cancelled") this.showError(`Ubwishyu ntibwatangiye: ${errorMsg}`);
+		}
+	}
+
+	private async pollUpskillsAfricaPayment(token: string, email: string, transactionRef: string): Promise<void> {
+		const labels = getUpskillsAfricaPaymentFlowLabels();
+		for (let attempt = 0; attempt < 24; attempt += 1) {
+			this.showStatus(`${labels.waiting} (${attempt + 1}/24)`);
+			await wait(5000);
+			const response = await fetch(
+				`${UPSKILLS_AFRICA_BACKEND_URL}/subscription/verify/${encodeURIComponent(transactionRef)}`,
+			);
+			const data = (await response.json()) as UpskillsAfricaVerifyResponse;
+			if (data.entitlement) {
+				this.showStatus(labels.paid);
+				await this.showUpskillsAfricaSubscriptionStatus(token, email);
+				return;
+			}
+			const status = (data.status || "").toLowerCase();
+			if (["failed", "cancelled", "canceled", "rejected"].includes(status)) {
+				this.showError(`Ubwishyu ntibwemejwe: ${data.status}`);
+				return;
+			}
+		}
+		this.showWarning("Ubwishyu buracyategerejwe. Nibwemezwa, ongera ufungure /kwinjira cyangwa /model.");
 	}
 
 	private showLoginProviderSelector(
@@ -5053,7 +5386,15 @@ export class InteractiveMode {
 					}
 
 					try {
-						this.session.modelRegistry.authStorage.logout(providerOption.id);
+						if (
+							providerOption.id === UPSKILLS_AFRICA_PROVIDER_ID ||
+							providerOption.id === UPSKILLS_AFRICA_MODEL_PROVIDER_ID
+						) {
+							this.session.modelRegistry.authStorage.logout(UPSKILLS_AFRICA_PROVIDER_ID);
+							this.session.modelRegistry.authStorage.logout(UPSKILLS_AFRICA_MODEL_PROVIDER_ID);
+						} else {
+							this.session.modelRegistry.authStorage.logout(providerOption.id);
+						}
 						this.session.modelRegistry.refresh();
 						await this.updateAvailableProviderCount();
 						const message =

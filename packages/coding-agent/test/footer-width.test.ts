@@ -2,7 +2,11 @@ import { visibleWidth } from "@earendil-works/pi-tui";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { AgentSession } from "../src/core/agent-session.ts";
 import type { ReadonlyFooterDataProvider } from "../src/core/footer-data-provider.ts";
-import { FooterComponent, formatCwdForFooter } from "../src/modes/interactive/components/footer.ts";
+import {
+	FooterComponent,
+	formatCwdForFooter,
+	KINYARWANDA_FOOTER_SAYINGS,
+} from "../src/modes/interactive/components/footer.ts";
 import { initTheme } from "../src/modes/interactive/theme/theme.ts";
 import { stripAnsi } from "../src/utils/ansi.ts";
 
@@ -143,7 +147,7 @@ describe("FooterComponent width handling", () => {
 		expect(statsLine).toContain("CH25.0%");
 	});
 
-	it("shows cost in RWF suffix form and Kigali weather on the stats row", () => {
+	it("renders the Gihanga kumurimo command bar with plain RWF amount and Kigali weather", () => {
 		const session = createSession({
 			sessionName: "",
 			usage: {
@@ -156,10 +160,20 @@ describe("FooterComponent width handling", () => {
 		});
 		const footer = new FooterComponent(session, createFooterData(1, "Kigali 24°C ☀"));
 
-		const statsLine = stripAnsi(footer.render(120)[1]);
+		const lines = footer.render(120).map(stripAnsi);
+		const [titleLine, statsLine] = lines;
 
+		expect(titleLine.startsWith("╭─ Gihanga kumurimo · /tmp/project (main)")).toBe(true);
+		expect(KINYARWANDA_FOOTER_SAYINGS.some((saying) => titleLine.endsWith(saying))).toBe(true);
+		expect(statsLine.startsWith("╰─ test-model")).toBe(true);
+		expect(statsLine.endsWith("Kigali 24°C ☀")).toBe(true);
+		expect(statsLine).toContain("12.3%/200k");
+		expect(statsLine).toContain("↑7.8k ↓159");
 		expect(statsLine).toContain("14 RWF");
 		expect(statsLine).toContain("Kigali 24°C ☀");
+		expect(statsLine).not.toContain("yakoreshejwe");
+		expect(statsLine).not.toContain("Codex");
+		expect(statsLine).not.toContain("RW Gihanga");
 		expect(statsLine).not.toContain("$0.009");
 	});
 });

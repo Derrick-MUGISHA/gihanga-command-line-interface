@@ -89,7 +89,7 @@ describe("OAuthSelectorComponent", () => {
 			[
 				{
 					id: "upskillsafrica-rask-d-technology",
-					name: "UpSkills Africa / Rask-D Technology",
+					name: "Upskillsafrica / Rask-D Technology",
 					authType: "api_key",
 					comingSoon: true,
 				},
@@ -100,7 +100,7 @@ describe("OAuthSelectorComponent", () => {
 
 		const output = stripAnsi(selector.render(120).join("\n"));
 
-		expect(output).toContain("UpSkills Africa / Rask-D Technology");
+		expect(output).toContain("Upskillsafrica / Rask-D Technology");
 		expect(output).toContain("coming soon");
 		expect(output).not.toContain("unconfigured");
 	});
