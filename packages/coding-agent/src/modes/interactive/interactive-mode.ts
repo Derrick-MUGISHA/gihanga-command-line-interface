@@ -530,6 +530,7 @@ export class InteractiveMode {
 
 	// Custom footer from extension (undefined = use built-in footer)
 	private customFooter: (Component & { dispose?(): void }) | undefined = undefined;
+	private footerAnimationTimer: ReturnType<typeof setInterval> | undefined = undefined;
 
 	// Header container that holds the built-in or custom header
 	private headerContainer: Container;
@@ -826,6 +827,7 @@ export class InteractiveMode {
 		this.ui.addChild(this.pendingMessagesContainer);
 		this.ui.addChild(this.statusContainer);
 		this.renderWidgets(); // Initialize with default spacer
+		this.startFooterAnimationTimer();
 		this.ui.addChild(this.widgetContainerAbove);
 		this.ui.addChild(this.editorContainer);
 		this.ui.addChild(this.widgetContainerBelow);
@@ -2096,6 +2098,22 @@ export class InteractiveMode {
 		this.renderWidgetContainer(this.widgetContainerAbove, this.extensionWidgetsAbove, true, true);
 		this.renderWidgetContainer(this.widgetContainerBelow, this.extensionWidgetsBelow, false, false);
 		this.ui.requestRender();
+	}
+
+	private startFooterAnimationTimer(): void {
+		if (this.footerAnimationTimer) return;
+		this.footerAnimationTimer = setInterval(() => {
+			if (!this.customFooter) {
+				this.ui.requestRender();
+			}
+		}, 7000);
+		this.footerAnimationTimer.unref?.();
+	}
+
+	private stopFooterAnimationTimer(): void {
+		if (!this.footerAnimationTimer) return;
+		clearInterval(this.footerAnimationTimer);
+		this.footerAnimationTimer = undefined;
 	}
 
 	private renderWidgetContainer(
@@ -6408,6 +6426,7 @@ export class InteractiveMode {
 			this.ui.terminal.setProgress(false);
 		}
 		this.clearStatusIndicator();
+		this.stopFooterAnimationTimer();
 		this.themeController.disableAutoSync();
 		this.clearExtensionTerminalInputListeners();
 		this.footer.dispose();
