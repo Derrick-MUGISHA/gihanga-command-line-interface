@@ -19,6 +19,7 @@ interface InputState {
 export class Input implements Component, Focusable {
 	private value: string = "";
 	private cursor: number = 0; // Cursor position in the value
+	private masked = false;
 	public onSubmit?: (value: string) => void;
 	public onEscape?: () => void;
 
@@ -43,6 +44,10 @@ export class Input implements Component, Focusable {
 	setValue(value: string): void {
 		this.value = value;
 		this.cursor = Math.min(this.cursor, value.length);
+	}
+
+	setMasked(masked: boolean): void {
+		this.masked = masked;
 	}
 
 	handleInput(data: string): void {
@@ -385,17 +390,18 @@ export class Input implements Component, Focusable {
 		}
 
 		let visibleText = "";
-		let cursorDisplay = this.cursor;
-		const totalWidth = visibleWidth(this.value);
+		const renderValue = this.masked ? "•".repeat([...segmenter.segment(this.value)].length) : this.value;
+		let cursorDisplay = this.masked ? [...segmenter.segment(this.value.slice(0, this.cursor))].length : this.cursor;
+		const totalWidth = visibleWidth(renderValue);
 
 		if (totalWidth < availableWidth) {
 			// Everything fits (leave room for cursor at end)
-			visibleText = this.value;
+			visibleText = renderValue;
 		} else {
 			// Need horizontal scrolling
 			// Reserve one column for cursor if it's at the end
-			const scrollWidth = this.cursor === this.value.length ? availableWidth - 1 : availableWidth;
-			const cursorCol = visibleWidth(this.value.slice(0, this.cursor));
+			const scrollWidth = cursorDisplay === renderValue.length ? availableWidth - 1 : availableWidth;
+			const cursorCol = visibleWidth(renderValue.slice(0, cursorDisplay));
 
 			if (scrollWidth > 0) {
 				const halfWidth = Math.floor(scrollWidth / 2);
@@ -412,8 +418,8 @@ export class Input implements Component, Focusable {
 					startCol = Math.max(0, cursorCol - halfWidth);
 				}
 
-				visibleText = sliceByColumn(this.value, startCol, scrollWidth, true);
-				const beforeCursor = sliceByColumn(this.value, startCol, Math.max(0, cursorCol - startCol), true);
+				visibleText = sliceByColumn(renderValue, startCol, scrollWidth, true);
+				const beforeCursor = sliceByColumn(renderValue, startCol, Math.max(0, cursorCol - startCol), true);
 				cursorDisplay = beforeCursor.length;
 			} else {
 				visibleText = "";

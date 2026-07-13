@@ -1,4 +1,4 @@
-import { setKeybindings, type TUI } from "@earendil-works/pi-tui";
+import { Input, setKeybindings, type TUI } from "@earendil-works/pi-tui";
 import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { KeybindingsManager } from "../../../src/core/keybindings.ts";
 import { LoginDialogComponent } from "../../../src/modes/interactive/components/login-dialog.ts";
@@ -35,6 +35,24 @@ describe("LoginDialogComponent OAuth prompts", () => {
 
 	beforeEach(() => {
 		setKeybindings(new KeybindingsManager());
+	});
+
+	test("masks raw Input rendering without changing submitted value", () => {
+		const input = new Input();
+		let submitted = "";
+		input.onSubmit = (value) => {
+			submitted = value;
+		};
+
+		input.setMasked(true);
+		input.handleInput("secret123");
+
+		const rendered = stripAnsi(input.render(40).join("\n"));
+		expect(rendered).toContain("•••••••••");
+		expect(rendered).not.toContain("secret123");
+
+		input.handleInput("\n");
+		expect(submitted).toBe("secret123");
 	});
 
 	test("keeps previous prompt input stable when a later prompt is active", async () => {
@@ -101,5 +119,23 @@ describe("LoginDialogComponent OAuth prompts", () => {
 
 		dialog.handleInput("\n");
 		await expect(prompt).resolves.toBe("second-secret-demo");
+	});
+
+	test("masks secret prompt input and submitted value while resolving the raw value", async () => {
+		const dialog = createDialog();
+
+		const prompt = dialog.showPrompt("Password:", undefined, { masked: true });
+		dialog.handleInput("super-secret");
+
+		let output = renderDialog(dialog).join("\n");
+		expect(output).toContain("Password:");
+		expect(output).toContain("••••••••••••");
+		expect(output).not.toContain("super-secret");
+
+		dialog.handleInput("\n");
+		await expect(prompt).resolves.toBe("super-secret");
+		output = renderDialog(dialog).join("\n");
+		expect(output).toContain("> ••••••••••••");
+		expect(output).not.toContain("super-secret");
 	});
 });

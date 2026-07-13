@@ -52,7 +52,6 @@ import {
 	APP_TITLE,
 	CONFIG_DIR_NAME,
 	getAgentDir,
-	getAuthPath,
 	getDebugLogPath,
 	getDocsPath,
 	getShareViewerUrl,
@@ -5115,11 +5114,11 @@ export class InteractiveMode {
 
 		try {
 			const email = (await dialog.showPrompt("Email:")).trim();
-			const password = (await dialog.showPrompt("Password (visible while typing):")).trim();
+			const password = (await dialog.showPrompt("Password:", undefined, { masked: true })).trim();
 			if (!email || !password) throw new Error("Email and password are required.");
 			const payload: Record<string, string> = { email, password };
 			if (mode === "register") {
-				const confirmPassword = (await dialog.showPrompt("Confirm password (visible while typing):")).trim();
+				const confirmPassword = (await dialog.showPrompt("Confirm password:", undefined, { masked: true })).trim();
 				payload.confirmPassword = confirmPassword;
 			}
 			const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/auth/${mode}`, {
@@ -5135,7 +5134,7 @@ export class InteractiveMode {
 			restoreEditor();
 			this.session.modelRegistry.refresh();
 			await this.updateAvailableProviderCount();
-			this.showStatus(`Logged in to ${UPSKILLS_AFRICA_PROVIDER_NAME}. Credentials saved to ${getAuthPath()}`);
+			this.showStatus(`Logged in to ${UPSKILLS_AFRICA_PROVIDER_NAME}. Credentials saved locally.`);
 			await this.showUpskillsAfricaSubscriptionStatus(data.token, data.user?.email || email);
 		} catch (error: unknown) {
 			restoreEditor();
@@ -5213,15 +5212,12 @@ export class InteractiveMode {
 				message?: string;
 			};
 			if ((data.entitlements || []).length > 0) {
-				this.showStatus(`Upskillsafrica logged in as ${email}. Subscription active. Choose a model to continue.`);
+				this.showStatus("Upskillsafrica subscription active. Choose a model to continue.");
 				this.showModelSelector();
 				return;
 			}
 			const plans = data.plans || [];
-			const planText = plans.map(formatUpskillsAfricaPlanLabel).join(", ");
-			this.showWarning(
-				`Upskillsafrica logged in as ${email}, but no active subscription was found. ${planText || "No plans returned."}`,
-			);
+			this.showWarning("No active Upskillsafrica subscription found. Choose a plan to continue.");
 			if (plans.length > 0) {
 				this.showUpskillsAfricaPlanSelector(token, email, plans);
 			}
@@ -5473,11 +5469,11 @@ export class InteractiveMode {
 		this.footer.invalidate();
 		this.updateEditorBorderColor();
 		if (selectedModel) {
-			this.showStatus(`${actionLabel}. Selected ${selectedModel.id}. Credentials saved to ${getAuthPath()}`);
+			this.showStatus(`${actionLabel}. Selected ${selectedModel.id}. Credentials saved locally.`);
 			void this.maybeWarnAboutAnthropicSubscriptionAuth(selectedModel);
 			this.checkDaxnutsEasterEgg(selectedModel);
 		} else {
-			this.showStatus(`${actionLabel}. Credentials saved to ${getAuthPath()}`);
+			this.showStatus(`${actionLabel}. Credentials saved locally.`);
 			if (selectionError) {
 				this.showError(selectionError);
 			} else {
