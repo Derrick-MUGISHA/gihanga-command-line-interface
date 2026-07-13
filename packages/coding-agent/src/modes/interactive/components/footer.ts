@@ -66,9 +66,13 @@ function stableIndex(text: string, modulo: number): number {
 	return hash % modulo;
 }
 
-function pickKinyarwandaFooterSaying(seed: string): string {
+const FOOTER_SAYING_ROTATION_MS = 7000;
+
+function pickKinyarwandaFooterSaying(seed: string, now = Date.now()): string {
+	const rotation = Math.floor(now / FOOTER_SAYING_ROTATION_MS);
 	return (
-		KINYARWANDA_FOOTER_SAYINGS[stableIndex(seed, KINYARWANDA_FOOTER_SAYINGS.length)] ?? KINYARWANDA_FOOTER_SAYINGS[0]
+		KINYARWANDA_FOOTER_SAYINGS[stableIndex(`${seed}:${rotation}`, KINYARWANDA_FOOTER_SAYINGS.length)] ??
+		KINYARWANDA_FOOTER_SAYINGS[0]
 	);
 }
 

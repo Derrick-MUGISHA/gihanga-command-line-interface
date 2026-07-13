@@ -1,5 +1,5 @@
 import { visibleWidth } from "@earendil-works/pi-tui";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { AgentSession } from "../src/core/agent-session.ts";
 import type { ReadonlyFooterDataProvider } from "../src/core/footer-data-provider.ts";
 import {
@@ -175,5 +175,23 @@ describe("FooterComponent width handling", () => {
 		expect(statsLine).not.toContain("Codex");
 		expect(statsLine).not.toContain("RW Gihanga");
 		expect(statsLine).not.toContain("$0.009");
+	});
+
+	it("rotates Kinyarwanda footer sayings over time", () => {
+		const session = createSession({ sessionName: "" });
+		const footer = new FooterComponent(session, createFooterData(1, "Kigali 24°C ☀"));
+		const dateSpy = vi.spyOn(Date, "now");
+		try {
+			const renderedSayings = new Set<string>();
+			for (let i = 0; i < 12; i += 1) {
+				dateSpy.mockReturnValue(i * 7000);
+				const titleLine = stripAnsi(footer.render(120)[0]);
+				const saying = KINYARWANDA_FOOTER_SAYINGS.find((candidate) => titleLine.endsWith(candidate));
+				if (saying) renderedSayings.add(saying);
+			}
+			expect(renderedSayings.size).toBeGreaterThan(1);
+		} finally {
+			dateSpy.mockRestore();
+		}
 	});
 });
