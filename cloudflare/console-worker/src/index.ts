@@ -219,7 +219,6 @@ const SITE_NAV = `
     <nav class="hidden items-center gap-5 text-sm text-[#dce1fb] md:flex">
       <a class="hover:text-gihanga-text" href="/#install">Install</a>
       <a class="hover:text-gihanga-text" href="/docs">Docs</a>
-      <a class="hover:text-gihanga-text" href="/credits">Credits</a>
       <a class="hover:text-gihanga-text" href="/privacy">Privacy</a>
       <a class="hover:text-gihanga-text" href="/terms">Terms</a>
     </nav>
