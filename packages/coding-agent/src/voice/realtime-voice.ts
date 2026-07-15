@@ -27,7 +27,7 @@ function startMicrophone(): ChildProcessByStdio<null, Readable, Readable> {
 			? ["-f", "avfoundation", "-i", ":0"]
 			: process.platform === "win32"
 				? ["-f", "dshow", "-i", "audio=default"]
-				: ["-f", "alsa", "-i", "default"];
+				: ["-f", "pulse", "-i", process.env.GIHANGA_VOICE_SOURCE || "default"];
 	return spawn(
 		"ffmpeg",
 		[
