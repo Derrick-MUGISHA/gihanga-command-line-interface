@@ -236,6 +236,16 @@ export async function speakText(authStorage: AuthStorage, text: string): Promise
 	});
 }
 
+function isUsableVoiceCommand(value: string): boolean {
+	const normalized = value.trim().toUpperCase().replace(/[.!?]/g, "").replace(/\s+/g, " ");
+	return (
+		normalized.length >= 3 &&
+		normalized !== "NO COMMAND" &&
+		normalized !== "NO_COMMAND" &&
+		!normalized.startsWith("NO COMMAND ")
+	);
+}
+
 export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeOptions = {}): Promise<void> {
 	const commandMode = options.onTranscript !== undefined;
 	const token = getToken(authStorage);
@@ -298,7 +308,7 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 						model,
 						output_modalities: commandMode ? ["text"] : ["audio"],
 						instructions: commandMode
-							? `Listen to Kinyarwanda or English, but return an English command only. ${KINYARWANDA_COMMAND_VOCABULARY} Do not answer the command or add commentary.`
+							? `Listen to Kinyarwanda or English, but return an English command only. ${KINYARWANDA_COMMAND_VOCABULARY} If there is no clear user speech or no command, return exactly NO_COMMAND and nothing else. Do not answer the command or add commentary.`
 							: "Respond in English only.",
 						audio: {
 							input: {
@@ -347,7 +357,7 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 				} else if (message.type === "response.output_text.done") {
 					const command = (message.text || commandBuffer).trim();
 					commandBuffer = "";
-					if (commandMode && command && options.onTranscript) {
+					if (commandMode && isUsableVoiceCommand(command) && options.onTranscript) {
 						await options.onTranscript(command);
 					}
 				} else if (message.type === "response.audio_transcript.delta") {
