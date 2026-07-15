@@ -7,7 +7,7 @@ const UPSKILLSAFRICA_PROVIDER_ID = "upskillsafrica";
 const DEFAULT_BACKEND_URL = "https://upskillsafrica-ai-backend.boyg87059.workers.dev";
 const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1";
 const SAMPLE_RATE = 24_000;
-const KINYARWANDA_COMMAND_VOCABULARY = `Common commands: "soma dosiye" means read a file; "andika muri dosiye" means write to a file; "hindura dosiye" means edit a file; "kora test" means run tests; "kora build" means build the project; "reba dosiye" means inspect files; "shakisha" means search; "siba" means delete; "fungura" means open; "ohereza" means deploy or send. Preserve file names, paths, commands, and technical terms exactly.`;
+const KINYARWANDA_COMMAND_VOCABULARY = `Kinyarwanda command hints: "soma dosiye" means read a file; "andika muri dosiye" means write to a file; "hindura dosiye" means edit a file; "kora test" means run tests; "kora build" means build the project; "reba dosiye" means inspect files; "shakisha" means search; "siba" means delete; "fungura" means open; "ohereza" means deploy or send. Convert Kinyarwanda commands into clear English commands. Preserve file names, paths, commands, and technical terms exactly.`;
 
 function getBackendUrl(authStorage: AuthStorage): string {
 	const credential = authStorage.get(UPSKILLSAFRICA_PROVIDER_ID);
@@ -101,8 +101,7 @@ export interface VoiceModeOptions {
 }
 
 async function playGreeting(backendUrl: string, token: string, model: string): Promise<void> {
-	const hour = new Date().getHours();
-	const greeting = hour >= 12 && hour < 18 ? "Mwiriwe, ndishimiye kugufasha." : "Muraho, ndishimiye kugufasha.";
+	const greeting = "Hello, I am happy to help.";
 	const socket = new WebSocket(`${backendUrl.replace(/^http/, "ws")}/v1/realtime?model=${encodeURIComponent(model)}`, {
 		headers: { Authorization: `Bearer ${token}` },
 	});
@@ -196,7 +195,7 @@ export async function speakText(authStorage: AuthStorage, text: string): Promise
 						model,
 						output_modalities: ["audio"],
 						instructions:
-							"Speak the assistant response warmly in the language it was written. Do not add commentary.",
+							"Speak the assistant response in English only. Translate any Kinyarwanda content to English. Do not add commentary.",
 						audio: { output: { format: { type: "audio/pcm", rate: SAMPLE_RATE }, voice: "shimmer" } },
 					},
 				}),
@@ -293,8 +292,8 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 						model,
 						output_modalities: commandMode ? ["text"] : ["audio"],
 						instructions: commandMode
-							? `Listen to the user's Kinyarwanda or English command. ${KINYARWANDA_COMMAND_VOCABULARY} Return only the command text, without answering it, translating it, or adding commentary.`
-							: "Respond in Kinyarwanda by default unless the user asks for English.",
+							? `Listen to Kinyarwanda or English, but return an English command only. ${KINYARWANDA_COMMAND_VOCABULARY} Do not answer the command or add commentary.`
+							: "Respond in English only.",
 						audio: {
 							input: {
 								format: { type: "audio/pcm", rate: SAMPLE_RATE },
