@@ -3980,6 +3980,15 @@ export class InteractiveMode {
 		this.ui.requestRender();
 	}
 
+	async submitVoiceCommand(transcript: string): Promise<void> {
+		const command = transcript.trim();
+		if (!command) return;
+		this.chatContainer.addChild(new Spacer(1));
+		this.chatContainer.addChild(new Text(theme.fg("accent", `◉ ${command}`), 1, 0));
+		this.ui.requestRender();
+		await this.session.prompt(command, { streamingBehavior: "followUp" });
+	}
+
 	showError(errorMessage: string): void {
 		this.chatContainer.addChild(new Spacer(1));
 		this.chatContainer.addChild(new Text(theme.fg("error", `Error: ${errorMessage}`), 1, 0));

@@ -523,17 +523,6 @@ export async function main(args: string[], options?: MainOptions) {
 	}
 	time("parseArgs");
 
-	if (parsed.vuga) {
-		try {
-			await runVoiceMode(AuthStorage.create());
-		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : String(error);
-			console.error(chalk.red(`Vuga yanze: ${message}`));
-			process.exitCode = 1;
-		}
-		return;
-	}
-
 	if (parsed.version) {
 		console.log(VERSION);
 		process.exit(0);
@@ -554,6 +543,7 @@ export async function main(args: string[], options?: MainOptions) {
 	}
 
 	let appMode = resolveAppMode(parsed, process.stdin.isTTY, process.stdout.isTTY);
+	if (parsed.vuga) appMode = "interactive";
 	const shouldTakeOverStdout = appMode !== "interactive" && !isPlainRuntimeMetadataCommand(parsed);
 	if (shouldTakeOverStdout) {
 		takeOverStdout();
@@ -838,6 +828,14 @@ export async function main(args: string[], options?: MainOptions) {
 			initialMessages: parsed.messages,
 			verbose: parsed.verbose,
 		});
+		if (parsed.vuga) {
+			await interactiveMode.init();
+			void runVoiceMode(authStorage, {
+				onTranscript: (transcript) => interactiveMode.submitVoiceCommand(transcript),
+			}).catch((error: unknown) => {
+				interactiveMode.showError(error instanceof Error ? error.message : String(error));
+			});
+		}
 		if (startupBenchmark) {
 			await interactiveMode.init();
 			time("interactiveMode.init");

@@ -95,7 +95,12 @@ function toText(data: unknown): Promise<string> | string {
 	return String(data);
 }
 
-export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
+export interface VoiceModeOptions {
+	onTranscript?: (transcript: string) => Promise<void>;
+}
+
+export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeOptions = {}): Promise<void> {
+	const commandMode = options.onTranscript !== undefined;
 	const token = getToken(authStorage);
 	if (!token) {
 		throw new Error("Injira muri Upskillsafrica ubanza ukoreshe /kwinjira.");
@@ -113,10 +118,11 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 	const wsUrl = `${backendUrl.replace(/^http/, "ws")}/v1/realtime?model=${encodeURIComponent(model)}`;
 	const socket = new WebSocket(wsUrl, { headers: { Authorization: `Bearer ${token}` } });
 	const microphone = startMicrophone();
-	const speaker = startSpeaker();
+	const speaker = commandMode ? undefined : startSpeaker();
 	let closed = false;
 	let animationTimer: NodeJS.Timeout | undefined;
 	let animationFrame = 0;
+	let commandBuffer = "";
 
 	const startAnimation = (): void => {
 		if (animationTimer) return;
@@ -140,8 +146,10 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 		stopAnimation();
 		microphone.stdout.removeAllListeners();
 		microphone.kill("SIGTERM");
-		speaker.stdin.end();
-		if (speaker.exitCode === null) speaker.kill("SIGTERM");
+		if (speaker) {
+			speaker.stdin.end();
+			if (speaker.exitCode === null) speaker.kill("SIGTERM");
+		}
 		if (socket.readyState === WebSocket.OPEN) socket.close();
 		process.stdout.write("\n◉ Vuga irangiye.\n");
 	};
@@ -165,14 +173,18 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 					session: {
 						type: "realtime",
 						model,
-						output_modalities: ["audio"],
-						instructions: "Respond in Kinyarwanda by default unless the user asks for English.",
+						output_modalities: commandMode ? ["text"] : ["audio"],
+						instructions: commandMode
+							? "Listen to the user's Kinyarwanda or English command. Return only the command text, without answering it, translating it, or adding commentary."
+							: "Respond in Kinyarwanda by default unless the user asks for English.",
 						audio: {
 							input: {
 								format: { type: "audio/pcm", rate: SAMPLE_RATE },
 								turn_detection: { type: "server_vad" },
 							},
-							output: { format: { type: "audio/pcm", rate: SAMPLE_RATE }, voice: "alloy" },
+							...(commandMode
+								? {}
+								: { output: { format: { type: "audio/pcm", rate: SAMPLE_RATE }, voice: "alloy" } }),
 						},
 					},
 				}),
@@ -188,14 +200,27 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 				const message = JSON.parse(await toText(event.data as unknown)) as {
 					type?: string;
 					delta?: string;
+					text?: string;
 					error?: { message?: string };
 				};
-				if (message.type === "response.output_audio.delta" || message.type === "response.audio.delta") {
-					if (message.delta) speaker.stdin.write(Buffer.from(message.delta, "base64"));
-				} else if (
-					message.type === "response.output_text.delta" ||
-					message.type === "response.audio_transcript.delta"
+				if (
+					(message.type === "response.output_audio.delta" || message.type === "response.audio.delta") &&
+					speaker
 				) {
+					if (message.delta) speaker.stdin.write(Buffer.from(message.delta, "base64"));
+				} else if (message.type === "response.output_text.delta") {
+					if (message.delta) {
+						commandBuffer += message.delta;
+						if (!commandMode) process.stdout.write(message.delta);
+					}
+				} else if (message.type === "response.output_text.done") {
+					const command = (message.text || commandBuffer).trim();
+					commandBuffer = "";
+					if (commandMode && command && options.onTranscript) {
+						process.stdout.write(`\n◉ command: ${command}\n`);
+						await options.onTranscript(command);
+					}
+				} else if (message.type === "response.audio_transcript.delta") {
 					if (message.delta) process.stdout.write(message.delta);
 				} else if (message.type === "error") {
 					finish(new Error(message.error?.message || "Realtime voice error."));
@@ -210,6 +235,7 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 		socket.addEventListener("error", () => finish(new Error("Realtime voice connection failed.")));
 		socket.addEventListener("close", () => finish());
 		microphone.on("error", () => finish(new Error("Microphone requires ffmpeg. Install ffmpeg and try again.")));
-		speaker.on("error", () => finish(new Error("Audio playback requires ffplay. Install ffmpeg and try again.")));
+		if (speaker)
+			speaker.on("error", () => finish(new Error("Audio playback requires ffplay. Install ffmpeg and try again.")));
 	});
 }
