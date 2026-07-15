@@ -180,7 +180,13 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 						audio: {
 							input: {
 								format: { type: "audio/pcm", rate: SAMPLE_RATE },
-								turn_detection: { type: "server_vad", create_response: !commandMode },
+								turn_detection: {
+									type: "server_vad",
+									threshold: 0.2,
+									prefix_padding_ms: 300,
+									silence_duration_ms: 500,
+									create_response: !commandMode,
+								},
 							},
 							...(commandMode
 								? {}
