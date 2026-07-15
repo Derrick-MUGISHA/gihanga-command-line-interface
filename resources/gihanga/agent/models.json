@@ -120,6 +120,46 @@
           }
         },
         {
+          "id": "gpt-realtime-2.1",
+          "name": "gpt-realtime-2.1",
+          "reasoning": false,
+          "input": [
+            "text",
+            "audio"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "headers": {
+            "x-upskillsafrica-org-code": "$UPSKILLSAFRICA_ORG_CODE"
+          }
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "name": "gpt-5.6-luna",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "headers": {
+            "x-upskillsafrica-org-code": "$UPSKILLSAFRICA_ORG_CODE"
+          }
+        },
+        {
+          "id": "gpt-5.5",
+          "name": "gpt-5.5",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "headers": {
+            "x-upskillsafrica-org-code": "$UPSKILLSAFRICA_ORG_CODE"
+          }
+        },
+        {
           "id": "uaf_model_two_alpha",
           "name": "uaf_model_two_alpha",
           "reasoning": true,
