@@ -573,7 +573,7 @@ async function handleRealtimeClientSecrets(request: Request, env: Env): Promise<
 			session: {
 				type: "realtime",
 				model,
-				output_modalities: ["audio", "text"],
+				output_modalities: ["audio"],
 			},
 		}),
 	});

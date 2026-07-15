@@ -20,6 +20,7 @@ export interface Args {
 	resume?: boolean;
 	help?: boolean;
 	version?: boolean;
+	vuga?: boolean;
 	mode?: Mode;
 	name?: string;
 	noSession?: boolean;
@@ -75,6 +76,8 @@ export function parseArgs(args: string[]): Args {
 			result.help = true;
 		} else if (arg === "--version" || arg === "-v") {
 			result.version = true;
+		} else if (arg === "vuga") {
+			result.vuga = true;
 		} else if (arg === "--mode" && i + 1 < args.length) {
 			const mode = args[++i];
 			if (mode === "text" || mode === "json" || mode === "rpc") {
@@ -276,6 +279,7 @@ ${chalk.bold("Amahitamo:")}
   --offline                      Hagarika ibikorwa by'urusobe mu gutangira (kimwe na GIHANGA_OFFLINE=1)
   --help, -h                     Erekana ubu bufasha
   --version, -v                  Erekana nomero ya version
+  vuga                           Tangira ibiganiro by'ijwi bya Upskillsafrica (bisaba subscription)
 
 Ingereko zishobora kongeramo flags nshya (urugero: --plan iva muri plan-mode extension).${extensionFlagsText}
 

@@ -213,7 +213,7 @@ const SITE_NAV = `
       </span>
       <div>
         <p class="text-lg font-black tracking-tight">Gihanga CLI <span class="ml-2 rounded-md border border-gihanga-emerald/30 bg-gihanga-emerald/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-gihanga-emerald">Alpha</span></p>
-        <p class="text-xs text-gihanga-muted">Kinyarwanda-first terminal AI · v0.1.0-alpha.1</p>
+        <p class="text-xs text-gihanga-muted">Kinyarwanda-first terminal AI · v0.1.0-alpha.2</p>
       </div>
     </a>
     <nav class="hidden items-center gap-5 text-sm text-[#dce1fb] md:flex">
@@ -227,7 +227,7 @@ const SITE_NAV = `
 const SITE_FOOTER = `
   <footer class="relative mx-auto w-[90%] max-w-[1200px] px-0 py-10 text-sm text-slate-500">
     <div class="flex flex-col justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
-      <p>Gihanga CLI - Kinyarwanda-first terminal AI coding assistant · Alpha v0.1.0-alpha.1</p>
+      <p>Gihanga CLI - Kinyarwanda-first terminal AI coding assistant · Alpha v0.1.0-alpha.2</p>
       <a class="text-gihanga-emerald hover:text-[#68fcbf]" href="https://upskillsafrica.org" rel="noopener noreferrer">Powered by Upskillsafrica Foundation</a>
     </div>
   </footer>`;
