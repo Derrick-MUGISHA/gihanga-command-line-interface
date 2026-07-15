@@ -3983,9 +3983,6 @@ export class InteractiveMode {
 	async submitVoiceCommand(transcript: string): Promise<void> {
 		const command = transcript.trim();
 		if (!command) return;
-		this.chatContainer.addChild(new Spacer(1));
-		this.chatContainer.addChild(new Text(theme.fg("accent", `◉ ${command}`), 1, 0));
-		this.ui.requestRender();
 		await this.session.prompt(command, { streamingBehavior: "followUp" });
 	}
 

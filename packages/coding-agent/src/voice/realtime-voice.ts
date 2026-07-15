@@ -7,6 +7,7 @@ const UPSKILLSAFRICA_PROVIDER_ID = "upskillsafrica";
 const DEFAULT_BACKEND_URL = "https://upskillsafrica-ai-backend.boyg87059.workers.dev";
 const DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1";
 const SAMPLE_RATE = 24_000;
+const KINYARWANDA_COMMAND_VOCABULARY = `Common commands: "soma dosiye" means read a file; "andika muri dosiye" means write to a file; "hindura dosiye" means edit a file; "kora test" means run tests; "kora build" means build the project; "reba dosiye" means inspect files; "shakisha" means search; "siba" means delete; "fungura" means open; "ohereza" means deploy or send. Preserve file names, paths, commands, and technical terms exactly.`;
 
 function getBackendUrl(authStorage: AuthStorage): string {
 	const credential = authStorage.get(UPSKILLSAFRICA_PROVIDER_ID);
@@ -99,6 +100,67 @@ export interface VoiceModeOptions {
 	onTranscript?: (transcript: string) => Promise<void>;
 }
 
+async function playGreeting(backendUrl: string, token: string, model: string): Promise<void> {
+	const hour = new Date().getHours();
+	const greeting = hour >= 12 && hour < 18 ? "Mwiriwe, ndishimiye kugufasha." : "Muraho, ndishimiye kugufasha.";
+	const socket = new WebSocket(`${backendUrl.replace(/^http/, "ws")}/v1/realtime?model=${encodeURIComponent(model)}`, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
+	const speaker = startSpeaker();
+	await new Promise<void>((resolve, reject) => {
+		const timeout = setTimeout(() => {
+			socket.close();
+			reject(new Error("Greeting timeout"));
+		}, 12_000);
+		const finish = (error?: Error): void => {
+			clearTimeout(timeout);
+			speaker.stdin.end();
+			if (speaker.exitCode === null) speaker.kill("SIGTERM");
+			error ? reject(error) : resolve();
+		};
+		socket.addEventListener("open", () => {
+			socket.send(
+				JSON.stringify({
+					type: "session.update",
+					session: {
+						type: "realtime",
+						model,
+						output_modalities: ["audio"],
+						instructions: `Speak only this warm, charming Kinyarwanda greeting: ${greeting}`,
+						audio: { output: { format: { type: "audio/pcm", rate: SAMPLE_RATE }, voice: "shimmer" } },
+					},
+				}),
+			);
+			socket.send(JSON.stringify({ type: "response.create" }));
+		});
+		socket.addEventListener("message", async (event) => {
+			try {
+				const message = JSON.parse(await toText(event.data as unknown)) as {
+					type?: string;
+					delta?: string;
+					error?: { message?: string };
+				};
+				if (
+					(message.type === "response.output_audio.delta" || message.type === "response.audio.delta") &&
+					message.delta
+				) {
+					speaker.stdin.write(Buffer.from(message.delta, "base64"));
+				} else if (message.type === "response.done") {
+					socket.close();
+					finish();
+				} else if (message.type === "error") {
+					finish(new Error(message.error?.message || "Greeting failed"));
+				}
+			} catch (error) {
+				finish(error instanceof Error ? error : new Error("Invalid greeting event"));
+			}
+		});
+		socket.addEventListener("error", () => finish(new Error("Greeting connection failed")));
+		socket.addEventListener("close", () => finish());
+		speaker.on("error", () => finish(new Error("Audio playback unavailable")));
+	});
+}
+
 export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeOptions = {}): Promise<void> {
 	const commandMode = options.onTranscript !== undefined;
 	const token = getToken(authStorage);
@@ -115,35 +177,23 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 		throw new Error(modelsBody.message || "Realtime voice is only available to paid Upskillsafrica users.");
 	}
 	const model = typeof modelsBody.models?.[0] === "string" ? modelsBody.models[0] : DEFAULT_REALTIME_MODEL;
+	if (commandMode) {
+		try {
+			await playGreeting(backendUrl, token, model);
+		} catch {
+			// Greeting failure must not prevent background voice commands from starting.
+		}
+	}
 	const wsUrl = `${backendUrl.replace(/^http/, "ws")}/v1/realtime?model=${encodeURIComponent(model)}`;
 	const socket = new WebSocket(wsUrl, { headers: { Authorization: `Bearer ${token}` } });
 	const microphone = startMicrophone();
 	const speaker = commandMode ? undefined : startSpeaker();
 	let closed = false;
-	let animationTimer: NodeJS.Timeout | undefined;
-	let animationFrame = 0;
 	let commandBuffer = "";
-
-	const startAnimation = (): void => {
-		if (animationTimer) return;
-		animationTimer = setInterval(() => {
-			const frames = ["▁▂▃▄▅▆▇", "▂▃▄▅▆▇▆", "▃▄▅▆▇▆▅", "▄▅▆▇▆▅▄", "▅▆▇▆▅▄▃", "▆▇▆▅▄▃▂"];
-			process.stdout.write(`\r◉ Vuga  ${frames[animationFrame % frames.length]}  speaking/listening`);
-			animationFrame++;
-		}, 120);
-	};
-
-	const stopAnimation = (): void => {
-		if (!animationTimer) return;
-		clearInterval(animationTimer);
-		animationTimer = undefined;
-		process.stdout.write("\r◉ Vuga  ░░░░░░░  stopped                    \n");
-	};
 
 	const stop = (): void => {
 		if (closed) return;
 		closed = true;
-		stopAnimation();
 		microphone.stdout.removeAllListeners();
 		microphone.kill("SIGTERM");
 		if (speaker) {
@@ -151,10 +201,8 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 			if (speaker.exitCode === null) speaker.kill("SIGTERM");
 		}
 		if (socket.readyState === WebSocket.OPEN) socket.close();
-		process.stdout.write("\n◉ Vuga irangiye.\n");
 	};
 
-	process.stdout.write(`◉ Gihanga Vuga · ${model}\nVuga ubu. Kanda Ctrl+C uhagarike.\n`);
 	process.once("SIGINT", stop);
 	process.once("SIGTERM", stop);
 
@@ -175,7 +223,7 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 						model,
 						output_modalities: commandMode ? ["text"] : ["audio"],
 						instructions: commandMode
-							? "Listen to the user's Kinyarwanda or English command. Return only the command text, without answering it, translating it, or adding commentary."
+							? `Listen to the user's Kinyarwanda or English command. ${KINYARWANDA_COMMAND_VOCABULARY} Return only the command text, without answering it, translating it, or adding commentary.`
 							: "Respond in Kinyarwanda by default unless the user asks for English.",
 						audio: {
 							input: {
@@ -225,7 +273,6 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 					const command = (message.text || commandBuffer).trim();
 					commandBuffer = "";
 					if (commandMode && command && options.onTranscript) {
-						process.stdout.write(`\n◉ command: ${command}\n`);
 						await options.onTranscript(command);
 					}
 				} else if (message.type === "response.audio_transcript.delta") {
@@ -233,8 +280,7 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 				} else if (message.type === "error") {
 					finish(new Error(message.error?.message || "Realtime voice error."));
 				} else if (message.type === "session.created") {
-					process.stdout.write("\n◉ realtime connected\n");
-					startAnimation();
+					// Background voice session is intentionally silent in the TUI.
 				}
 			} catch (error) {
 				finish(error instanceof Error ? error : new Error("Invalid realtime event."));
