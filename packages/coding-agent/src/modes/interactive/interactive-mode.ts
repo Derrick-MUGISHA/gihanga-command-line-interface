@@ -455,6 +455,7 @@ export class InteractiveMode {
 	private onInputCallback?: (text: string) => void;
 	private pendingUserInputs: string[] = [];
 	private activeStatusIndicator: StatusIndicator | undefined = undefined;
+	private voiceIconOverlay: OverlayHandle | undefined;
 	private readonly idleStatus = new IdleStatus();
 	private workingMessage: string | undefined = undefined;
 	private workingVisible = true;
@@ -3984,6 +3985,16 @@ export class InteractiveMode {
 		const command = transcript.trim();
 		if (!command) return;
 		await this.session.prompt(command, { streamingBehavior: "followUp" });
+	}
+
+	showVoiceInputIcon(): void {
+		if (this.voiceIconOverlay) return;
+		this.voiceIconOverlay = this.ui.showOverlay(new Text(theme.fg("accent", "◉"), 0, 0), {
+			anchor: "bottom-right",
+			offsetX: -2,
+			offsetY: -2,
+			nonCapturing: true,
+		});
 	}
 
 	showError(errorMessage: string): void {

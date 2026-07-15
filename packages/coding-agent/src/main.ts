@@ -830,6 +830,7 @@ export async function main(args: string[], options?: MainOptions) {
 		});
 		if (parsed.vuga) {
 			await interactiveMode.init();
+			interactiveMode.showVoiceInputIcon();
 			void runVoiceMode(authStorage, {
 				onTranscript: (transcript) => interactiveMode.submitVoiceCommand(transcript),
 			}).catch((error: unknown) => {
