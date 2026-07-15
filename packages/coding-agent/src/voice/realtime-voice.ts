@@ -34,6 +34,14 @@ function startMicrophone(): ChildProcessByStdio<null, Readable, Readable> {
 			"-hide_banner",
 			"-loglevel",
 			"error",
+			"-fflags",
+			"nobuffer",
+			"-flags",
+			"low_delay",
+			"-probesize",
+			"32",
+			"-analyzeduration",
+			"0",
 			...platformArgs,
 			"-ac",
 			"1",
@@ -56,6 +64,13 @@ function startSpeaker(): ChildProcessByStdio<Writable, null, null> {
 			"-hide_banner",
 			"-loglevel",
 			"quiet",
+			"-fflags",
+			"nobuffer",
+			"-flags",
+			"low_delay",
+			"-framedrop",
+			"-sync",
+			"audio",
 			"-nodisp",
 			"-autoexit",
 			"-f",
@@ -109,10 +124,10 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 		speaker.stdin.end();
 		if (speaker.exitCode === null) speaker.kill("SIGTERM");
 		if (socket.readyState === WebSocket.OPEN) socket.close();
-		process.stdout.write("\nVuga irangiye.\n");
+		process.stdout.write("\n◉ Vuga irangiye.\n");
 	};
 
-	process.stdout.write(`Gihanga Vuga · ${model}\nVuga ubu. Kanda Ctrl+C uhagarike.\n`);
+	process.stdout.write(`◉ Gihanga Vuga · ${model}\nVuga ubu. Kanda Ctrl+C uhagarike.\n`);
 	process.once("SIGINT", stop);
 	process.once("SIGTERM", stop);
 
@@ -166,7 +181,7 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 				} else if (message.type === "error") {
 					finish(new Error(message.error?.message || "Realtime voice error."));
 				} else if (message.type === "session.created") {
-					process.stdout.write("\n[realtime connected]\n");
+					process.stdout.write("\n◉ realtime connected\n");
 				}
 			} catch (error) {
 				finish(error instanceof Error ? error : new Error("Invalid realtime event."));
