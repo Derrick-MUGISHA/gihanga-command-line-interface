@@ -115,10 +115,29 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 	const microphone = startMicrophone();
 	const speaker = startSpeaker();
 	let closed = false;
+	let animationTimer: NodeJS.Timeout | undefined;
+	let animationFrame = 0;
+
+	const startAnimation = (): void => {
+		if (animationTimer) return;
+		animationTimer = setInterval(() => {
+			const frames = ["▁▂▃▄▅▆▇", "▂▃▄▅▆▇▆", "▃▄▅▆▇▆▅", "▄▅▆▇▆▅▄", "▅▆▇▆▅▄▃", "▆▇▆▅▄▃▂"];
+			process.stdout.write(`\r◉ Vuga  ${frames[animationFrame % frames.length]}  speaking/listening`);
+			animationFrame++;
+		}, 120);
+	};
+
+	const stopAnimation = (): void => {
+		if (!animationTimer) return;
+		clearInterval(animationTimer);
+		animationTimer = undefined;
+		process.stdout.write("\r◉ Vuga  ░░░░░░░  stopped                    \n");
+	};
 
 	const stop = (): void => {
 		if (closed) return;
 		closed = true;
+		stopAnimation();
 		microphone.stdout.removeAllListeners();
 		microphone.kill("SIGTERM");
 		speaker.stdin.end();
@@ -182,6 +201,7 @@ export async function runVoiceMode(authStorage: AuthStorage): Promise<void> {
 					finish(new Error(message.error?.message || "Realtime voice error."));
 				} else if (message.type === "session.created") {
 					process.stdout.write("\n◉ realtime connected\n");
+					startAnimation();
 				}
 			} catch (error) {
 				finish(error instanceof Error ? error : new Error("Invalid realtime event."));
