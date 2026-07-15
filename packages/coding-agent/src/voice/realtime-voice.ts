@@ -59,6 +59,11 @@ function startMicrophone(): ChildProcessByStdio<null, Readable, Readable> {
 }
 
 function startSpeaker(): ChildProcessByStdio<Writable, null, null> {
+	const environment = { ...process.env };
+	if (process.platform === "linux") {
+		environment.SDL_AUDIODRIVER = "pulse";
+		environment.PULSE_SINK = process.env.GIHANGA_VOICE_SINK || "default";
+	}
 	return spawn(
 		"ffplay",
 		[
@@ -85,6 +90,7 @@ function startSpeaker(): ChildProcessByStdio<Writable, null, null> {
 		],
 		{
 			stdio: ["pipe", "ignore", "ignore"],
+			env: environment,
 		},
 	);
 }
