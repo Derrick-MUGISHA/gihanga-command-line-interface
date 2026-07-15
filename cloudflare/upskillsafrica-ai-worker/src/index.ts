@@ -13,8 +13,13 @@ interface EntitlementsKV {
 
 interface Env {
 	ENTITLEMENTS: EntitlementsKV;
+	PAYMENT_WORKER?: Fetcher;
 	DATABASE_URL?: string;
 	PAYMENT_WORKER_URL: string;
+	AZURE_REALTIME_ENDPOINT?: string;
+	AZURE_REALTIME_API_KEY?: string;
+	UPSKILLS_REALTIME_MODEL?: string;
+	UPSKILLS_REALTIME_MODELS?: string;
 	SUBSCRIPTION_AMOUNT_RWF?: string;
 	MONTHLY_SUBSCRIPTION_AMOUNT_RWF?: string;
 	SUBSCRIPTION_DAYS?: string;
@@ -190,6 +195,15 @@ export default {
 			}
 			if (url.pathname === "/auth/me" && request.method === "GET") {
 				return handleMe(request, env);
+			}
+			if (url.pathname === "/v1/realtime/models" && request.method === "GET") {
+				return handleRealtimeModels(request, env);
+			}
+			if (url.pathname === "/v1/realtime" && request.method === "GET" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
+				return handleRealtimeWebSocket(request, env);
+			}
+			if (url.pathname === "/v1/realtime/client-secrets" && request.method === "POST") {
+				return handleRealtimeClientSecrets(request, env);
 			}
 			if (url.pathname === "/subscription/start" && request.method === "POST") {
 				return handleSubscriptionStart(request, env);
@@ -491,6 +505,87 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
 	return json({ user, entitlements, models: getModels(env), plans: getPlans(env) });
 }
 
+function getRealtimeModels(env: Env): string[] {
+	const raw = env.UPSKILLS_REALTIME_MODELS?.trim();
+	if (!raw) return env.UPSKILLS_REALTIME_MODEL ? [env.UPSKILLS_REALTIME_MODEL] : [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (Array.isArray(parsed)) return parsed.filter((model): model is string => typeof model === "string" && model.trim().length > 0);
+	} catch {
+		return raw.split(",").map((model) => model.trim()).filter(Boolean);
+	}
+	return [];
+}
+
+async function getPaidRealtimeUser(request: Request, env: Env): Promise<{ user: AuthUser; entitlement: AccountEntitlementRecord } | Response> {
+	const user = await getUserFromRequest(request, env);
+	if (!user) return json({ message: "Login required." }, 401);
+	const entitlement = await getActiveAccountEntitlement(user.id, env);
+	if (!entitlement) return json({ message: "Active Upskillsafrica subscription required for realtime voice." }, 402);
+	return { user, entitlement };
+}
+
+async function handleRealtimeModels(request: Request, env: Env): Promise<Response> {
+	const access = await getPaidRealtimeUser(request, env);
+	if (access instanceof Response) return access;
+	return json({ provider: "Upskillsafrica AI realtime", models: getRealtimeModels(env), entitlement: accountToEntitlement(access.entitlement) });
+}
+
+async function handleRealtimeWebSocket(request: Request, env: Env): Promise<Response> {
+	const access = await getPaidRealtimeUser(request, env);
+	if (access instanceof Response) return access;
+	if (!env.AZURE_REALTIME_ENDPOINT || !env.AZURE_REALTIME_API_KEY) {
+		return json({ message: "Realtime voice is not configured." }, 503);
+	}
+	const configuredModels = getRealtimeModels(env);
+	const requestedModel = new URL(request.url).searchParams.get("model") || configuredModels[0];
+	if (!requestedModel) return json({ message: "No realtime Azure deployment is configured." }, 503);
+	if (configuredModels.length > 0 && !configuredModels.includes(requestedModel)) {
+		return json({ message: "Requested realtime model is not available." }, 400);
+	}
+	const upstreamUrl = `${env.AZURE_REALTIME_ENDPOINT.replace(/\/$/, "")}/openai/v1/realtime?model=${encodeURIComponent(requestedModel)}`;
+	const upstreamHeaders = new Headers(request.headers);
+	upstreamHeaders.delete("authorization");
+	upstreamHeaders.set("api-key", env.AZURE_REALTIME_API_KEY);
+	upstreamHeaders.set("upgrade", "websocket");
+	return fetch(new Request(upstreamUrl, { method: "GET", headers: upstreamHeaders }));
+}
+
+async function handleRealtimeClientSecrets(request: Request, env: Env): Promise<Response> {
+	const access = await getPaidRealtimeUser(request, env);
+	if (access instanceof Response) return access;
+	if (!env.AZURE_REALTIME_ENDPOINT || !env.AZURE_REALTIME_API_KEY) {
+		return json({ message: "Realtime voice is not configured." }, 503);
+	}
+	const body = await readJsonObject(request);
+	const requestedModel = readString(body.model);
+	const configuredModels = getRealtimeModels(env);
+	const model = requestedModel || configuredModels[0];
+	if (!model) return json({ message: "No realtime Azure deployment is configured." }, 503);
+	if (configuredModels.length > 0 && !configuredModels.includes(model)) {
+		return json({ message: "Requested realtime model is not available." }, 400);
+	}
+	const endpoint = env.AZURE_REALTIME_ENDPOINT.replace(/\/$/, "");
+	const providerResponse = await fetch(`${endpoint}/openai/v1/realtime/client_secrets`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json", "api-key": env.AZURE_REALTIME_API_KEY },
+		body: JSON.stringify({
+			session: {
+				type: "realtime",
+				model,
+				output_modalities: ["audio", "text"],
+			},
+		}),
+	});
+	const providerBody = await safeReadJson(providerResponse);
+	if (!providerResponse.ok) {
+		return json({ message: "Azure realtime voice is unavailable for this deployment.", providerStatus: providerResponse.status }, 502);
+	}
+	const value = readString(providerBody.value) || readString(providerBody.client_secret);
+	if (!value) return json({ message: "Azure realtime did not return a client secret." }, 502);
+	return json({ value, expiresAt: providerBody.expires_at || null, model });
+}
+
 function rowToAuthUser(row: SqlRow): AuthUser {
 	const id = readString(row.id);
 	const email = readString(row.email);
@@ -555,6 +650,22 @@ function accountToEntitlement(record: AccountEntitlementRecord): EntitlementReco
 	};
 }
 
+function getPaymentWorkerUrl(env: Env, path: string): string {
+	const baseUrl = env.PAYMENT_WORKER_URL || "https://payment-worker.local";
+	return `${baseUrl.replace(/\/$/, "")}${path}`;
+}
+
+async function callPaymentWorker(env: Env, path: string, init?: RequestInit): Promise<Response> {
+	const url = getPaymentWorkerUrl(env, path);
+	if (env.PAYMENT_WORKER) {
+		return env.PAYMENT_WORKER.fetch(new Request(url, init));
+	}
+	if (!env.PAYMENT_WORKER_URL) {
+		return json({ message: "Payment worker is not configured." }, 503);
+	}
+	return fetch(url, init);
+}
+
 async function handleSubscriptionStart(request: Request, env: Env): Promise<Response> {
 	if (!env.PAYMENT_WORKER_URL) {
 		return json({ message: "Payment worker is not configured." }, 503);
@@ -564,6 +675,17 @@ async function handleSubscriptionStart(request: Request, env: Env): Promise<Resp
 	const phone = readString(body.phone);
 	if (!phone) {
 		return json({ message: "phone is required." }, 400);
+	}
+	const activeEntitlement = user ? await getActiveAccountEntitlement(user.id, env) : undefined;
+	if (activeEntitlement) {
+		return json(
+			{
+				message: "Active Upskillsafrica subscription already exists. Choose a model to continue.",
+				entitlement: accountToEntitlement(activeEntitlement),
+				models: getModels(env),
+			},
+			409,
+		);
 	}
 	const plan = getPlanByRequest(body, env);
 	const transactionRef = readString(body.transactionRef) || createTransactionRef(plan.id);
@@ -597,13 +719,43 @@ async function handleSubscriptionStart(request: Request, env: Env): Promise<Resp
 			payment: { status: "test_bypass", message: "Test number bypassed payment for Upskillsafrica QA." },
 		});
 	}
-	const response = await fetch(`${env.PAYMENT_WORKER_URL.replace(/\/$/, "")}/pay`, {
+	const response = await callPaymentWorker(env, "/pay", {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ amount: plan.amountRwf, phone, transactionRef }),
 	});
 	const paymentBody = await safeReadJson(response);
-	return json({ transactionRef, plan, payment: paymentBody }, response.ok ? 200 : response.status);
+	const paymentRef = readString(paymentBody.ref);
+	const receiptRef = response.ok && paymentRef ? paymentRef : transactionRef;
+	if (response.ok && paymentRef && paymentRef !== transactionRef) {
+		await env.ENTITLEMENTS.put(`pending:${paymentRef}`, JSON.stringify({ ...pendingRecord, ref: paymentRef }), { expirationTtl: 24 * 60 * 60 });
+		if (user) {
+			const sql = getSql(env);
+			await sql`
+				insert into pending_subscriptions (transaction_ref, plan_id, phone, amount_rwf, user_id)
+				values (${paymentRef}, ${plan.id}, ${phone}, ${plan.amountRwf}, ${user.id})
+				on conflict (transaction_ref) do update set
+					plan_id = excluded.plan_id,
+					phone = excluded.phone,
+					amount_rwf = excluded.amount_rwf,
+					user_id = excluded.user_id,
+					updated_at = now()
+			`;
+		}
+	}
+	if (!response.ok) {
+		return json(
+			{
+				transactionRef: receiptRef,
+				merchantTransactionRef: transactionRef,
+				plan,
+				payment: paymentBody,
+				message: readString(paymentBody.message) || readString(paymentBody.text) || "Payment request failed.",
+			},
+			response.status,
+		);
+	}
+	return json({ transactionRef: receiptRef, merchantTransactionRef: transactionRef, plan, payment: paymentBody });
 }
 
 async function handleTerminalPay(request: Request, env: Env): Promise<Response> {
@@ -640,8 +792,7 @@ async function handleSubscriptionVerify(transactionRef: string, env: Env): Promi
 	if (!env.PAYMENT_WORKER_URL) {
 		return json({ message: "Payment worker is not configured." }, 503);
 	}
-	const verifyUrl = `${env.PAYMENT_WORKER_URL.replace(/\/$/, "")}/verify/${encodeURIComponent(transactionRef)}`;
-	const response = await fetch(verifyUrl, { headers: { Accept: "application/json" } });
+	const response = await callPaymentWorker(env, `/verify/${encodeURIComponent(transactionRef)}`, { headers: { Accept: "application/json" } });
 	const payment = await safeReadJson(response);
 	const status = readString(payment.status) || "pending";
 	if (response.ok && isPaidStatus(status)) {
@@ -669,6 +820,8 @@ function resolveUpskillsafricaModelAlias(modelId: string | undefined): string | 
 function isOpenRouterRoutableModelId(modelId: string): boolean {
 	return modelId.startsWith("openrouter/");
 }
+
+
 
 async function handleChatCompletions(request: Request, env: Env): Promise<Response> {
 	const receiptHeader = request.headers.get("x-upskillsafrica-receipt");

@@ -5,6 +5,8 @@
   "compatibility_date": "2026-07-12",
   "vars": {
     "PAYMENT_WORKER_URL": "https://rask-payment.boyg87059.workers.dev",
+    "AZURE_REALTIME_ENDPOINT": "https://rask-resource.services.ai.azure.com",
+    "UPSKILLS_REALTIME_MODEL": "gpt-realtime-2.1",
     "SUBSCRIPTION_AMOUNT_RWF": "5000",
     "MONTHLY_SUBSCRIPTION_AMOUNT_RWF": "53000",
     "SUBSCRIPTION_DAYS": "30",
@@ -23,6 +25,12 @@
       "binding": "ENTITLEMENTS",
       "id": "8a9637f521224163b8f71b422bac31a4",
       "preview_id": "4c61386e81f244c8a7d38781a1296ea0"
+    }
+  ],
+  "services": [
+    {
+      "binding": "PAYMENT_WORKER",
+      "service": "rask-payment"
     }
   ]
 }
