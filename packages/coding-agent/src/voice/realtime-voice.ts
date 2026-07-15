@@ -180,7 +180,7 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 						audio: {
 							input: {
 								format: { type: "audio/pcm", rate: SAMPLE_RATE },
-								turn_detection: { type: "server_vad" },
+								turn_detection: { type: "server_vad", create_response: !commandMode },
 							},
 							...(commandMode
 								? {}
@@ -208,6 +208,8 @@ export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeO
 					speaker
 				) {
 					if (message.delta) speaker.stdin.write(Buffer.from(message.delta, "base64"));
+				} else if (message.type === "input_audio_buffer.speech_stopped" && commandMode) {
+					socket.send(JSON.stringify({ type: "response.create" }));
 				} else if (message.type === "response.output_text.delta") {
 					if (message.delta) {
 						commandBuffer += message.delta;
