@@ -161,6 +161,76 @@ async function playGreeting(backendUrl: string, token: string, model: string): P
 	});
 }
 
+export async function speakText(authStorage: AuthStorage, text: string): Promise<void> {
+	const token = getToken(authStorage);
+	if (!token || !text.trim()) return;
+	const backendUrl = getBackendUrl(authStorage);
+	const modelsResponse = await fetch(`${backendUrl}/v1/realtime/models`, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
+	if (!modelsResponse.ok) return;
+	const modelsBody = (await modelsResponse.json().catch(() => ({}))) as { models?: unknown[] };
+	const model = typeof modelsBody.models?.[0] === "string" ? modelsBody.models[0] : DEFAULT_REALTIME_MODEL;
+	const socket = new WebSocket(`${backendUrl.replace(/^http/, "ws")}/v1/realtime?model=${encodeURIComponent(model)}`, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
+	const speaker = startSpeaker();
+	await new Promise<void>((resolve) => {
+		const timeout = setTimeout(() => {
+			socket.close();
+			speaker.stdin.end();
+			resolve();
+		}, 30_000);
+		const finish = (): void => {
+			clearTimeout(timeout);
+			speaker.stdin.end();
+			if (speaker.exitCode === null) speaker.kill("SIGTERM");
+			resolve();
+		};
+		socket.addEventListener("open", () => {
+			socket.send(
+				JSON.stringify({
+					type: "session.update",
+					session: {
+						type: "realtime",
+						model,
+						output_modalities: ["audio"],
+						instructions:
+							"Speak the assistant response warmly in the language it was written. Do not add commentary.",
+						audio: { output: { format: { type: "audio/pcm", rate: SAMPLE_RATE }, voice: "shimmer" } },
+					},
+				}),
+			);
+			socket.send(
+				JSON.stringify({
+					type: "conversation.item.create",
+					item: { type: "message", role: "user", content: [{ type: "input_text", text }] },
+				}),
+			);
+			socket.send(JSON.stringify({ type: "response.create" }));
+		});
+		socket.addEventListener("message", async (event) => {
+			try {
+				const message = JSON.parse(await toText(event.data as unknown)) as { type?: string; delta?: string };
+				if (
+					(message.type === "response.output_audio.delta" || message.type === "response.audio.delta") &&
+					message.delta
+				) {
+					speaker.stdin.write(Buffer.from(message.delta, "base64"));
+				} else if (message.type === "response.done") {
+					socket.close();
+					finish();
+				}
+			} catch {
+				finish();
+			}
+		});
+		socket.addEventListener("error", finish);
+		socket.addEventListener("close", finish);
+		speaker.on("error", finish);
+	});
+}
+
 export async function runVoiceMode(authStorage: AuthStorage, options: VoiceModeOptions = {}): Promise<void> {
 	const commandMode = options.onTranscript !== undefined;
 	const token = getToken(authStorage);

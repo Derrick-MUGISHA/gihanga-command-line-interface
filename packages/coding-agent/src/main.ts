@@ -48,7 +48,7 @@ import { initTheme, stopThemeWatcher } from "./modes/interactive/theme/theme.ts"
 import { handleConfigCommand, handlePackageCommand } from "./package-manager-cli.ts";
 import { isLocalPath, normalizePath, resolvePath } from "./utils/paths.ts";
 import { cleanupWindowsSelfUpdateQuarantine } from "./utils/windows-self-update.ts";
-import { runVoiceMode } from "./voice/realtime-voice.ts";
+import { runVoiceMode, speakText } from "./voice/realtime-voice.ts";
 
 const EXTENSION_LOAD_FAILURE_HINT = 'Hint: Start without extensions using "pi -ne".';
 
@@ -830,7 +830,9 @@ export async function main(args: string[], options?: MainOptions) {
 		});
 		if (parsed.vuga) {
 			await interactiveMode.init();
-			interactiveMode.showVoiceInputIcon();
+			interactiveMode.setVoiceOutput((text) => {
+				void speakText(authStorage, text);
+			});
 			void runVoiceMode(authStorage, {
 				onTranscript: (transcript) => interactiveMode.submitVoiceCommand(transcript),
 			}).catch((error: unknown) => {

@@ -455,7 +455,7 @@ export class InteractiveMode {
 	private onInputCallback?: (text: string) => void;
 	private pendingUserInputs: string[] = [];
 	private activeStatusIndicator: StatusIndicator | undefined = undefined;
-	private voiceIconOverlay: OverlayHandle | undefined;
+	private voiceOutput?: (text: string) => void;
 	private readonly idleStatus = new IdleStatus();
 	private workingMessage: string | undefined = undefined;
 	private workingVisible = true;
@@ -3083,6 +3083,19 @@ export class InteractiveMode {
 						this.streamingMessage.errorMessage = errorMessage;
 					}
 					this.streamingComponent.updateContent(this.streamingMessage);
+					const responseText = this.streamingMessage.content
+						.filter((content) => content.type === "text")
+						.map((content) => content.text)
+						.join("\n")
+						.trim();
+					if (
+						this.voiceOutput &&
+						responseText &&
+						this.streamingMessage.stopReason !== "error" &&
+						this.streamingMessage.stopReason !== "aborted"
+					) {
+						this.voiceOutput(responseText);
+					}
 
 					if (this.streamingMessage.stopReason === "aborted" || this.streamingMessage.stopReason === "error") {
 						if (!errorMessage) {
@@ -3987,14 +4000,8 @@ export class InteractiveMode {
 		await this.session.prompt(command, { streamingBehavior: "followUp" });
 	}
 
-	showVoiceInputIcon(): void {
-		if (this.voiceIconOverlay) return;
-		this.voiceIconOverlay = this.ui.showOverlay(new Text(theme.fg("accent", "◉"), 0, 0), {
-			anchor: "bottom-right",
-			offsetX: -2,
-			offsetY: -2,
-			nonCapturing: true,
-		});
+	setVoiceOutput(handler: ((text: string) => void) | undefined): void {
+		this.voiceOutput = handler;
 	}
 
 	showError(errorMessage: string): void {
