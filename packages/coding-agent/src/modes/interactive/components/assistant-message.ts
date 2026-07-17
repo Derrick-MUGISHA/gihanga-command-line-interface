@@ -141,8 +141,8 @@ export class AssistantMessageComponent extends Container {
 			this.contentContainer.addChild(
 				new Text(
 					theme.fg(
-						"error",
-						"Error: Model stopped because it reached the maximum output token limit. The response may be incomplete.",
+						"warning",
+						"Notice: The model reached its output limit, so the response may be incomplete. Type continue to resume from where it stopped.",
 					),
 					this.outputPad,
 					0,
