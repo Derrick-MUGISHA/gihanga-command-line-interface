@@ -116,6 +116,7 @@ const DEFAULT_AZURE_PROJECT_ENDPOINT = "https://ai-boyg870595858ai912957897118.s
 const DEFAULT_ORG_AZURE_ENDPOINT = "https://rask-resource.services.ai.azure.com/openai/v1";
 const DEFAULT_ORG_AZURE_PROJECT_ENDPOINT = "https://rask-resource.services.ai.azure.com/api/projects/rask";
 const DEFAULT_AZURE_DEPLOYMENT = "gpt-4o-mini";
+const ORG_REQUIRED_MODEL_IDS = new Set(["UAF_model_one", "uaf_model_two_alpha", "gpt-realtime-2.1", "gpt-5.6-luna", "gpt-5.5"]);
 
 const DEFAULT_AZURE_MODELS: ManagedModel[] = [
 	{
@@ -224,44 +225,48 @@ export default {
 				return handlePlans(env);
 			}
 			if (url.pathname === "/models" && request.method === "GET") {
-				return handleModels(env);
+				return await handleModels(env);
 			}
 			if (url.pathname === "/auth/register" && request.method === "POST") {
-				return handleRegister(request, env);
+				return await handleRegister(request, env);
 			}
 			if (url.pathname === "/auth/login" && request.method === "POST") {
-				return handleLogin(request, env);
+				return await handleLogin(request, env);
 			}
 			if (url.pathname === "/auth/me" && request.method === "GET") {
-				return handleMe(request, env);
+				return await handleMe(request, env);
 			}
 			if (url.pathname === "/v1/realtime/models" && request.method === "GET") {
-				return handleRealtimeModels(request, env);
+				return await handleRealtimeModels(request, env);
 			}
 			if (url.pathname === "/v1/realtime" && request.method === "GET" && request.headers.get("Upgrade")?.toLowerCase() === "websocket") {
-				return handleRealtimeWebSocket(request, env);
+				return await handleRealtimeWebSocket(request, env);
 			}
 			if (url.pathname === "/v1/realtime/client-secrets" && request.method === "POST") {
-				return handleRealtimeClientSecrets(request, env);
+				return await handleRealtimeClientSecrets(request, env);
 			}
 			if (url.pathname === "/subscription/start" && request.method === "POST") {
-				return handleSubscriptionStart(request, env);
+				return await handleSubscriptionStart(request, env);
 			}
 			if (url.pathname === "/terminal/pay" && request.method === "POST") {
-				return handleTerminalPay(request, env);
+				return await handleTerminalPay(request, env);
 			}
 			if (url.pathname.startsWith("/subscription/verify/") && request.method === "GET") {
-				return handleSubscriptionVerify(url.pathname.split("/").pop() || "", env);
+				return await handleSubscriptionVerify(url.pathname.split("/").pop() || "", env);
 			}
 			if (url.pathname.startsWith("/credits/") && request.method === "GET") {
-				return handleCredits(url.pathname.split("/").pop() || "", env);
+				return await handleCredits(url.pathname.split("/").pop() || "", env);
 			}
 			if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
-				return handleChatCompletions(request, env);
+				return await handleChatCompletions(request, env);
 			}
 			return json({ message: "Not Found" }, 404);
 		} catch (error) {
-			return json({ message: error instanceof Error ? error.message : "Internal error" }, 500);
+			const message = error instanceof Error ? error.message : "Internal error";
+			if (url.pathname.startsWith("/v1/")) {
+				return openAiError(message, 500, "internal_error");
+			}
+			return json({ message }, 500);
 		}
 	},
 };
@@ -276,6 +281,19 @@ function corsHeaders(): HeadersInit {
 
 function json(data: JsonObject, status = 200): Response {
 	return Response.json(data, { status, headers: corsHeaders() });
+}
+
+function openAiError(message: string, status: number, code = "upskillsafrica_error"): Response {
+	return json(
+		{
+			error: {
+				message,
+				type: "upskillsafrica_error",
+				code,
+			},
+		},
+		status,
+	);
 }
 
 async function readJsonObject(request: Request): Promise<JsonObject> {
@@ -942,16 +960,25 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 	if (!model) {
 		return json({ message: "Unknown Upskillsafrica AI model." }, 400);
 	}
-	if (model.requiresOrgCode && !(await hasValidOrgCode(request, body, env, authUser))) {
-		return json({ message: "Upskillsafrica organisation code required for this model." }, 403);
+	if (requiresOrganisationAccess(model) && !(await hasValidOrgCode(request, body, env, authUser))) {
+		return openAiError(
+			`This Upskillsafrica model (${model.id}) requires an organisation code. Run /kwinjira, choose "Add organisation code", then try again.`,
+			403,
+			"organisation_code_required",
+		);
 	}
 	const quota = await assertModelQuota(entitlement, model, env);
 	const startedAt = Date.now();
 	const response = model.source === "openrouter" ? await routeOpenRouter(body, model, env) : await routeAzure(body, model, env);
 	if (response.ok && quota.trackGpt5) {
-		await addGpt5Usage(entitlement.ref, Date.now() - startedAt, env);
-		if (authUser) {
-			await addAccountModelUsage(authUser.id, model.id, Date.now() - startedAt, env);
+		try {
+			const elapsedMs = Date.now() - startedAt;
+			await addGpt5Usage(entitlement.ref, elapsedMs, env);
+			if (authUser) {
+				await addAccountModelUsage(authUser.id, model.id, elapsedMs, env);
+			}
+		} catch (error) {
+			console.warn("Failed to record Upskillsafrica model usage", error instanceof Error ? error.message : String(error));
 		}
 	}
 	return response;
@@ -1023,14 +1050,24 @@ function usesMaxCompletionTokens(deployment: string): boolean {
 	return deployment.startsWith("gpt-5") || deployment.startsWith("o1") || deployment.startsWith("o3") || deployment.startsWith("o4");
 }
 
+function requiresOrganisationAccess(model: ManagedModel): boolean {
+	return (
+		model.requiresOrgCode === true ||
+		ORG_REQUIRED_MODEL_IDS.has(model.id) ||
+		(model.deployment ? ORG_REQUIRED_MODEL_IDS.has(model.deployment) : false) ||
+		(model.model ? ORG_REQUIRED_MODEL_IDS.has(model.model) : false)
+	);
+}
+
 async function routeAzure(body: JsonObject, model: ManagedModel, env: Env): Promise<Response> {
-	const apiKey = model.requiresOrgCode ? env.ORG_AZURE_OPENAI_API_KEY : env.AZURE_OPENAI_API_KEY;
+	const usesOrganisationAzure = requiresOrganisationAccess(model);
+	const apiKey = usesOrganisationAzure ? env.ORG_AZURE_OPENAI_API_KEY : env.AZURE_OPENAI_API_KEY;
 	if (!apiKey) {
 		return json({ message: "Azure OpenAI is not configured." }, 503);
 	}
 	const deployment = model.deployment || model.id.replace(/^azure_models\//, "");
 	const apiVersion = env.AZURE_OPENAI_API_VERSION || "2024-10-21";
-	const endpoint = (model.requiresOrgCode
+	const endpoint = (usesOrganisationAzure
 		? env.ORG_AZURE_OPENAI_ENDPOINT || DEFAULT_ORG_AZURE_ENDPOINT
 		: env.AZURE_OPENAI_ENDPOINT || DEFAULT_AZURE_ENDPOINT
 	).replace(/\/$/, "");
