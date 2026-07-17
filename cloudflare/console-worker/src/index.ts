@@ -68,7 +68,8 @@ if [ -n "$NPM_PREFIX" ] && [ ! -w "$NPM_PREFIX" ]; then
 fi
 
 if [ -d "$INSTALL_DIR/.git" ]; then
-	run_quiet "Kuvugurura Gihanga..." git -C "$INSTALL_DIR" pull --ff-only --quiet
+	run_quiet "Kuvugurura Gihanga..." git -C "$INSTALL_DIR" fetch --quiet origin main
+	run_quiet "Guhuza Gihanga..." git -C "$INSTALL_DIR" reset --hard --quiet origin/main
 elif [ -e "$INSTALL_DIR" ]; then
 	echo "Error: $INSTALL_DIR exists but is not a git repository." >&2
 	echo "Set GIHANGA_INSTALL_DIR to another path or remove that folder." >&2
