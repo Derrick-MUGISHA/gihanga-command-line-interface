@@ -249,27 +249,13 @@ function hasDefaultModelProvider(providerId: string): providerId is keyof typeof
 
 const BUILT_IN_MODEL_PROVIDERS = new Set<string>(getProviders());
 
-export const GIHANGA_ALLOWED_PROVIDER_IDS = new Set([
-	"anthropic",
-	"openai",
-	"google",
-	"google-vertex",
-	"openrouter",
-	"vercel-ai-gateway",
-	"nvidia",
-	"minimax",
-	"minimax-cn",
-	"zai",
-	"zai-coding-cn",
-	"kimi-coding",
-	"moonshotai",
-	"moonshotai-cn",
-	"deepseek",
-	"upskillsafrica",
+export const GIHANGA_HIDDEN_PROVIDER_IDS = new Set([
+	// Internal test provider; all real built-in and custom API-key providers should be available.
+	"faux",
 ]);
 
 export function isGihangaAllowedModelProvider(providerId: string): boolean {
-	return GIHANGA_ALLOWED_PROVIDER_IDS.has(providerId);
+	return !GIHANGA_HIDDEN_PROVIDER_IDS.has(providerId);
 }
 
 export function getUpskillsAfricaAccountActionLabels(): string[] {

@@ -457,7 +457,7 @@ function parseModelList(raw: string | undefined, source: ModelSource): ManagedMo
 	}
 }
 
-function getModels(env: Env): ManagedModel[] {
+function getConfiguredModels(env: Env): ManagedModel[] {
 	const azureModels = parseModelList(env.UPSKILLS_AZURE_MODELS, "azure_models");
 	const openRouterModels = parseModelList(env.UPSKILLS_OPENROUTER_MODELS, "openrouter");
 	return [
@@ -466,12 +466,64 @@ function getModels(env: Env): ManagedModel[] {
 	];
 }
 
+async function getDbModels(env: Env): Promise<ManagedModel[]> {
+	if (!env.DATABASE_URL) return [];
+	try {
+		const sql = getSql(env);
+		const rows = await sql`
+			select id, display_name, source, provider_model_id, deployment, version, price_tier, capabilities, metadata
+			from ai_models
+			where is_active = true
+			order by price_tier, id
+		`;
+		return rows.flatMap((row): ManagedModel[] => {
+			const id = readString(row.id);
+			const name = readString(row.display_name) || id;
+			const source = readString(row.source) === "openrouter" ? "openrouter" : readString(row.source) === "azure_models" ? "azure_models" : undefined;
+			const priceTier = readString(row.price_tier) === "free" ? "free" : "premium";
+			if (!id || !name || !source) return [];
+			const metadata = isJsonObject(row.metadata) ? row.metadata : {};
+			const capabilities = Array.isArray(row.capabilities)
+				? row.capabilities.filter((capability): capability is string => typeof capability === "string" && capability.trim().length > 0)
+				: ["chat", "code"];
+			return [
+				{
+					id,
+					name,
+					source,
+					priceTier,
+					capabilities: capabilities.length > 0 ? capabilities : ["chat", "code"],
+					deployment: readString(row.deployment) || readString(row.provider_model_id),
+					model: readString(row.provider_model_id) || id,
+					version: readString(row.version),
+					status: readString(metadata.status),
+					deploymentType: readString(metadata.deploymentType),
+					requiresOrgCode: metadata.requiresOrgCode === true,
+				},
+			];
+		});
+	} catch {
+		return [];
+	}
+}
+
+async function getModels(env: Env): Promise<ManagedModel[]> {
+	const configuredModels = getConfiguredModels(env);
+	const dbModels = await getDbModels(env);
+	const byId = new Map<string, ManagedModel>();
+	for (const model of dbModels) byId.set(model.id, model);
+	for (const model of configuredModels) {
+		if (!byId.has(model.id)) byId.set(model.id, model);
+	}
+	return [...byId.values()];
+}
+
 function handlePlans(env: Env): Response {
 	return json({ currency: "RWF", plans: getPlans(env) });
 }
 
-function handleModels(env: Env): Response {
-	const models = getModels(env);
+async function handleModels(env: Env): Promise<Response> {
+	const models = await getModels(env);
 	return json({
 		provider: "Upskillsafrica AI",
 		azureProjectEndpoint: env.AZURE_AI_PROJECT_ENDPOINT || DEFAULT_AZURE_PROJECT_ENDPOINT,
@@ -541,7 +593,7 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
 	const user = await getUserFromRequest(request, env);
 	if (!user) return json({ message: "Login required." }, 401);
 	const entitlements = await getAccountEntitlements(user.id, env);
-	return json({ user, entitlements, models: getModels(env), plans: getPlans(env) });
+	return json({ user, entitlements, models: await getModels(env), plans: getPlans(env) });
 }
 
 function getRealtimeModels(env: Env): string[] {
@@ -721,7 +773,7 @@ async function handleSubscriptionStart(request: Request, env: Env): Promise<Resp
 			{
 				message: "Active Upskillsafrica subscription already exists. Choose a model to continue.",
 				entitlement: accountToEntitlement(activeEntitlement),
-				models: getModels(env),
+				models: await getModels(env),
 			},
 			409,
 		);
@@ -820,7 +872,7 @@ async function handleCredits(receiptRef: string, env: Env): Promise<Response> {
 			remainingMs: Math.max(0, entitlement.gpt5DailyMsLimit - usage.gpt5Ms),
 			usageDate: usage.date,
 		},
-		models: getModels(env),
+		models: await getModels(env),
 	});
 }
 
@@ -876,7 +928,7 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 	if (!modelId) {
 		return json({ message: "model is required." }, 400);
 	}
-	let model = getModels(env).find((candidate) => candidate.id === modelId);
+	let model = (await getModels(env)).find((candidate) => candidate.id === modelId);
 	if (!model && isOpenRouterRoutableModelId(modelId)) {
 		const openRouterId = modelId.startsWith("openrouter/") ? modelId : `openrouter/${modelId}`;
 		model = {
@@ -890,7 +942,7 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 	if (!model) {
 		return json({ message: "Unknown Upskillsafrica AI model." }, 400);
 	}
-	if (model.requiresOrgCode && !(await hasValidOrgCode(request, body, env))) {
+	if (model.requiresOrgCode && !(await hasValidOrgCode(request, body, env, authUser))) {
 		return json({ message: "Upskillsafrica organisation code required for this model." }, 403);
 	}
 	const quota = await assertModelQuota(entitlement, model, env);
@@ -905,20 +957,33 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 	return response;
 }
 
-async function hasValidOrgCode(request: Request, body: JsonObject, env: Env): Promise<boolean> {
+async function hasValidOrgCode(request: Request, body: JsonObject, env: Env, user?: AuthUser): Promise<boolean> {
+	if (!env.DATABASE_URL) return false;
 	const provided = request.headers.get("x-upskillsafrica-org-code") || readString(body.organisationCode) || readString(body.organizationCode);
-	if (!provided || !env.DATABASE_URL) return false;
-	const codeHash = await sha256Base64(provided);
 	const sql = getSql(env);
-	const rows = await sql`
-		select code_hash
-		from organisation_codes
-		where code_hash = ${codeHash}
-			and is_active = true
-			and (expires_at is null or expires_at > now())
+	if (provided) {
+		const codeHash = await sha256Base64(provided);
+		const rows = await sql`
+			select code_hash
+			from organisation_codes
+			where code_hash = ${codeHash}
+				and is_active = true
+				and (expires_at is null or expires_at > now())
+			limit 1
+		`;
+		if (rows.length > 0) return true;
+	}
+	if (!user) return false;
+	const assignedRows = await sql`
+		select oc.code_hash
+		from user_organisation_codes uoc
+		join organisation_codes oc on oc.code_hash = uoc.code_hash
+		where uoc.user_id = ${user.id}
+			and oc.is_active = true
+			and (oc.expires_at is null or oc.expires_at > now())
 		limit 1
 	`;
-	return rows.length > 0;
+	return assignedRows.length > 0;
 }
 
 async function assertModelQuota(entitlement: EntitlementRecord, model: ManagedModel, env: Env): Promise<{ trackGpt5: boolean }> {

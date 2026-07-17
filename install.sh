@@ -39,6 +39,12 @@ require_command git
 require_command node
 require_command npm
 
+NPM_PREFIX="${npm_config_prefix:-$(npm config get prefix 2>/dev/null || true)}"
+if [ -n "$NPM_PREFIX" ] && [ ! -w "$NPM_PREFIX" ]; then
+	export npm_config_prefix="${npm_config_prefix:-$HOME/.local}"
+	mkdir -p "$npm_config_prefix/bin"
+fi
+
 if [ -d "$INSTALL_DIR/.git" ]; then
 	run_quiet "Kuvugurura Gihanga..." git -C "$INSTALL_DIR" pull --ff-only --quiet
 elif [ -e "$INSTALL_DIR" ]; then
@@ -58,6 +64,22 @@ GIHANGA_AGENT_DIR="${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"
 cp -R "$INSTALL_DIR/resources/gihanga/agent/skills/gihanga-community" "$GIHANGA_AGENT_DIR/skills/"
 cp "$INSTALL_DIR"/resources/gihanga/agent/data/* "$GIHANGA_AGENT_DIR/data/"
+if [ -f "$INSTALL_DIR/resources/gihanga/agent/models.json" ]; then
+	cp "$INSTALL_DIR/resources/gihanga/agent/models.json" "$GIHANGA_AGENT_DIR/models.json"
+	MODELS_PATH="$GIHANGA_AGENT_DIR/models.json" node <<'JS'
+const fs = require("fs");
+const path = process.env.MODELS_PATH;
+const data = JSON.parse(fs.readFileSync(path, "utf8"));
+for (const provider of Object.values(data.providers || {})) {
+	for (const model of provider.models || []) {
+		model.input = ["text"];
+		if (Array.isArray(model.output)) model.output = model.output.filter((value) => value === "text");
+		if (Array.isArray(model.output) && model.output.length === 0) delete model.output;
+	}
+}
+fs.writeFileSync(path, JSON.stringify(data, null, 2) + "\n");
+JS
+fi
 cp "$INSTALL_DIR"/resources/gihanga/agent/scripts/* "$GIHANGA_AGENT_DIR/scripts/"
 
 if [ "${GIHANGA_INSTALL_MBAZA_NLP:-0}" = "1" ] || [ "${GIHANGA_INSTALL_MBAZA_NLP:-}" = "true" ]; then
@@ -96,4 +118,11 @@ fi
 echo ""
 echo "Gihanga CLI installed successfully."
 echo "Kinyarwanda keyword data installed in: $GIHANGA_AGENT_DIR"
-echo "Run: gihanga --help"
+if command -v gihanga >/dev/null 2>&1; then
+	echo "Run: gihanga --help"
+elif [ -n "${npm_config_prefix:-}" ]; then
+	echo "Add $npm_config_prefix/bin to your PATH if needed."
+	echo "Then run: gihanga --help"
+else
+	echo "Run: gihanga --help"
+fi
