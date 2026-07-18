@@ -31,6 +31,18 @@ import {
 	withFileMutationQueue,
 } from "./tools/index.ts";
 
+const REASONING_MODEL_TIMEOUT_FLOORS_MS: Array<{ pattern: RegExp; timeoutMs: number }> = [
+	{ pattern: /(^|\/)o3($|[-/])/i, timeoutMs: 600_000 },
+	{ pattern: /gpt-5(\.|-|$)/i, timeoutMs: 600_000 },
+	{ pattern: /luna/i, timeoutMs: 600_000 },
+	{ pattern: /UAF_model_one|uaf_model_two_alpha/i, timeoutMs: 600_000 },
+];
+
+function getModelTimeoutFloorMs(model: Model<any>): number | undefined {
+	const key = `${model.provider}/${model.id}/${model.name}`;
+	return REASONING_MODEL_TIMEOUT_FLOORS_MS.find(({ pattern }) => pattern.test(key))?.timeoutMs;
+}
+
 export interface CreateAgentSessionOptions {
 	/** Working directory for project-local discovery. Default: process.cwd() */
 	cwd?: string;
@@ -310,7 +322,11 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 			// SDKs treat timeout=0 as 0ms (immediate timeout), not "no timeout".
 			// Use max int32 to effectively disable the timeout.
 			const effectiveTimeoutMs = httpIdleTimeoutMs === 0 ? 2147483647 : httpIdleTimeoutMs;
-			const timeoutMs = options?.timeoutMs ?? providerRetrySettings.timeoutMs ?? effectiveTimeoutMs;
+			const configuredTimeoutMs = options?.timeoutMs ?? providerRetrySettings.timeoutMs ?? effectiveTimeoutMs;
+			const modelTimeoutFloorMs = getModelTimeoutFloorMs(model);
+			const timeoutMs = modelTimeoutFloorMs
+				? Math.max(configuredTimeoutMs, modelTimeoutFloorMs)
+				: configuredTimeoutMs;
 			const websocketConnectTimeoutMs =
 				options?.websocketConnectTimeoutMs ?? settingsManager.getWebSocketConnectTimeoutMs();
 			let headers = mergeProviderAttributionHeaders(

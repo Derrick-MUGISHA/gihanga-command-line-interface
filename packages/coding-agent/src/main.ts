@@ -9,9 +9,11 @@ import { createInterface } from "node:readline";
 import { type ImageContent, modelsAreEqual } from "@earendil-works/pi-ai";
 import chalk from "chalk";
 import { type Args, type Mode, parseArgs, printHelp } from "./cli/args.ts";
+import { runDoctor } from "./cli/doctor.ts";
 import { processFileArguments } from "./cli/file-processor.ts";
 import { buildInitialMessage } from "./cli/initial-message.ts";
 import { listModels } from "./cli/list-models.ts";
+import { handleOrgCommand } from "./cli/org.ts";
 import { createProjectTrustContext } from "./cli/project-trust.ts";
 import { selectSession } from "./cli/session-picker.ts";
 import { shouldRunFirstTimeSetup, showFirstTimeSetup, showStartupSelector } from "./cli/startup-ui.ts";
@@ -116,7 +118,11 @@ function toPrintOutputMode(appMode: AppMode): Exclude<Mode, "rpc"> {
 }
 
 function isPlainRuntimeMetadataCommand(parsed: Args): boolean {
-	return !parsed.print && parsed.mode === undefined && (parsed.help === true || parsed.listModels !== undefined);
+	return (
+		!parsed.print &&
+		parsed.mode === undefined &&
+		(parsed.help === true || parsed.listModels !== undefined || parsed.doctor === true)
+	);
 }
 
 async function prepareInitialMessage(
@@ -511,6 +517,11 @@ export async function main(args: string[], options?: MainOptions) {
 		return;
 	}
 
+	if (await handleOrgCommand(args, { agentDir })) {
+		process.exit(process.exitCode ?? 0);
+		return;
+	}
+
 	const parsed = parseArgs(args);
 	if (parsed.diagnostics.length > 0) {
 		for (const d of parsed.diagnostics) {
@@ -566,7 +577,13 @@ export async function main(args: string[], options?: MainOptions) {
 
 	// Experimental first-time setup: theme choice and analytics opt-in.
 	// Runs before any runtime services are created so the chosen settings apply everywhere.
-	if (appMode === "interactive" && !parsed.help && parsed.listModels === undefined && shouldRunFirstTimeSetup()) {
+	if (
+		appMode === "interactive" &&
+		!parsed.help &&
+		!parsed.doctor &&
+		parsed.listModels === undefined &&
+		shouldRunFirstTimeSetup()
+	) {
 		await showFirstTimeSetup(startupSettingsManager);
 		time("firstTimeSetup");
 	}
@@ -611,7 +628,7 @@ export async function main(args: string[], options?: MainOptions) {
 		parsed.projectTrustOverride === undefined && !hasTrustRequiringProjectResources(sessionCwd)
 			? sessionCwd
 			: undefined;
-	const trustPromptMode: AppMode = parsed.help || parsed.listModels !== undefined ? "print" : appMode;
+	const trustPromptMode: AppMode = parsed.help || parsed.doctor || parsed.listModels !== undefined ? "print" : appMode;
 	const projectTrustByCwd = new Map<string, boolean>();
 
 	const resolvedExtensionPaths = resolveCliPaths(cwd, parsed.extensions);
@@ -762,6 +779,11 @@ export async function main(args: string[], options?: MainOptions) {
 			.extensions.flatMap((extension) => Array.from(extension.flags.values()));
 		printHelp(extensionFlags);
 		process.exit(0);
+	}
+
+	if (parsed.doctor) {
+		const exitCode = await runDoctor({ agentDir, authStorage, modelRegistry, settingsManager });
+		process.exit(exitCode);
 	}
 
 	if (parsed.listModels !== undefined) {

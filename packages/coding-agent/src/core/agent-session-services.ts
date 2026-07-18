@@ -15,6 +15,7 @@ import {
 import { type CreateAgentSessionOptions, type CreateAgentSessionResult, createAgentSession } from "./sdk.ts";
 import type { SessionManager } from "./session-manager.ts";
 import { SettingsManager } from "./settings-manager.ts";
+import { refreshUpskillsafricaModels } from "./upskillsafrica-model-refresh.ts";
 
 /**
  * Non-fatal issues collected while creating services or sessions.
@@ -139,8 +140,23 @@ export async function createAgentSessionServices(
 ): Promise<AgentSessionServices> {
 	const cwd = resolvePath(options.cwd);
 	const agentDir = options.agentDir ? resolvePath(options.agentDir) : getAgentDir();
+	const diagnostics: AgentSessionRuntimeDiagnostic[] = [];
 	const authStorage = options.authStorage ?? AuthStorage.create(join(agentDir, "auth.json"));
 	const settingsManager = options.settingsManager ?? SettingsManager.create(cwd, agentDir);
+	const modelRefreshResult = options.modelRegistry
+		? undefined
+		: await refreshUpskillsafricaModels({ agentDir, modelsJsonPath: join(agentDir, "models.json") });
+	if (modelRefreshResult?.updated) {
+		diagnostics.push({
+			type: "info",
+			message: `Updated Upskillsafrica model catalog from backend (${modelRefreshResult.modelCount ?? "unknown"} models).`,
+		});
+	} else if (modelRefreshResult?.error) {
+		diagnostics.push({
+			type: "warning",
+			message: `Could not refresh Upskillsafrica model catalog: ${modelRefreshResult.error}`,
+		});
+	}
 	const modelRegistry = options.modelRegistry ?? ModelRegistry.create(authStorage, join(agentDir, "models.json"));
 	const resourceLoader = new DefaultResourceLoader({
 		...(options.resourceLoaderOptions ?? {}),
@@ -150,7 +166,6 @@ export async function createAgentSessionServices(
 	});
 	await resourceLoader.reload(options.resourceLoaderReloadOptions);
 
-	const diagnostics: AgentSessionRuntimeDiagnostic[] = [];
 	const extensionsResult = resourceLoader.getExtensions();
 	for (const { name, config, extensionPath } of extensionsResult.runtime.pendingProviderRegistrations) {
 		try {

@@ -21,6 +21,7 @@ export interface Args {
 	help?: boolean;
 	version?: boolean;
 	vuga?: boolean;
+	doctor?: boolean;
 	mode?: Mode;
 	name?: string;
 	noSession?: boolean;
@@ -78,6 +79,8 @@ export function parseArgs(args: string[]): Args {
 			result.version = true;
 		} else if (arg === "vuga") {
 			result.vuga = true;
+		} else if (arg === "doctor") {
+			result.doctor = true;
 		} else if (arg === "--mode" && i + 1 < args.length) {
 			const mode = args[++i];
 			if (mode === "text" || mode === "json" || mode === "rpc") {
@@ -235,6 +238,9 @@ ${chalk.bold("Amategeko:")}
   ${APP_NAME} update [source|self|gihanga] Vugurura Gihanga (koresha --all kuri Gihanga n'ingereko)
   ${APP_NAME} list                      Erekana ingereko zinjijwe ziri mu igenamiterere
   ${APP_NAME} config [-l]               Fungura TUI kugira ngo wemere cyangwa uhagarike umutungo w'amapakeji (Tab ihindura scope)
+  ${APP_NAME} doctor                    Suzuma installation, auth, models, na backend
+  ${APP_NAME} org add <code>            Bika organisation code ya Upskillsafrica
+  ${APP_NAME} org status                Reba uko organisation access ihagaze
   ${APP_NAME} <command> --help          Erekana ubufasha ku mategeko install/remove/uninstall/update/list/config
 
 ${chalk.bold("Amahitamo:")}
