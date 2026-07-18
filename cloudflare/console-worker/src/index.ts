@@ -61,6 +61,25 @@ require_command git
 require_command node
 require_command npm
 
+remove_stale_gihanga_helper() {
+	local existing=""
+	existing="$(command -v gihanga 2>/dev/null || true)"
+	[ -n "$existing" ] || return 0
+	if [ -f "$existing" ] || [ -L "$existing" ]; then
+		if "$existing" --help 2>/dev/null | grep -q "Gihanga CLI helper"; then
+			if rm -f "$existing" 2>/dev/null; then
+				hash -r 2>/dev/null || true
+				echo "Removed old Gihanga helper: $existing"
+			else
+				echo "Warning: old Gihanga helper is still in PATH: $existing" >&2
+				echo "Remove it manually or make sure the npm global bin directory appears earlier in PATH." >&2
+			fi
+		fi
+	fi
+}
+
+remove_stale_gihanga_helper
+
 NPM_PREFIX="\${npm_config_prefix:-$(npm config get prefix 2>/dev/null || true)}"
 if [ -n "$NPM_PREFIX" ] && [ ! -w "$NPM_PREFIX" ]; then
 	export npm_config_prefix="\${npm_config_prefix:-$HOME/.local}"
@@ -81,7 +100,10 @@ fi
 cd "$INSTALL_DIR"
 run_quiet "Gutegura amapakeji..." npm install --ignore-scripts --silent --no-fund --no-audit --loglevel=error
 run_quiet "Kubaka Gihanga..." npm run build --silent
+remove_stale_gihanga_helper
 run_quiet_shell "Gushyira Gihanga muri terminal..." "cd packages/coding-agent && npm link --silent"
+hash -r 2>/dev/null || true
+remove_stale_gihanga_helper
 
 GIHANGA_AGENT_DIR="\${GIHANGA_AGENT_DIR:-$HOME/.gihanga/agent}"
 mkdir -p "$GIHANGA_AGENT_DIR/skills" "$GIHANGA_AGENT_DIR/data" "$GIHANGA_AGENT_DIR/scripts"
@@ -142,6 +164,8 @@ echo ""
 echo "Gihanga CLI installed successfully."
 echo "Kinyarwanda keyword data installed in: $GIHANGA_AGENT_DIR"
 if command -v gihanga >/dev/null 2>&1; then
+	GIHANGA_BIN="$(command -v gihanga)"
+	echo "Installed command: $GIHANGA_BIN"
 	echo "Run: gihanga --help"
 elif [ -n "\${npm_config_prefix:-}" ]; then
 	echo "Add $npm_config_prefix/bin to your PATH if needed."
