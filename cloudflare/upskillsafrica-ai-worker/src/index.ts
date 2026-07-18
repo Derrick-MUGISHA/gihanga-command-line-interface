@@ -991,16 +991,10 @@ function isOpenRouterRoutableModelId(modelId: string): boolean {
 async function handleChatCompletions(request: Request, env: Env): Promise<Response> {
 	const receiptHeader = request.headers.get("x-upskillsafrica-receipt");
 	const authUser = await getUserFromRequest(request, env);
-	const accountEntitlement = authUser ? await getActiveAccountEntitlement(authUser.id, env) : undefined;
-	const receiptEntitlement = receiptHeader ? await getValidEntitlement(receiptHeader, env) : undefined;
-	const entitlement = accountEntitlement ? accountToEntitlement(accountEntitlement) : receiptEntitlement;
-	if (!entitlement) {
-		return json({ message: "Upskillsafrica subscription required." }, 402);
-	}
 	const body = await readJsonObject(request);
 	const modelId = resolveUpskillsafricaModelAlias(readString(body.model));
 	if (!modelId) {
-		return json({ message: "model is required." }, 400);
+		return openAiError("model is required.", 400, "model_required");
 	}
 	let model = (await getModels(env)).find((candidate) => candidate.id === modelId);
 	if (!model && isOpenRouterRoutableModelId(modelId)) {
@@ -1014,18 +1008,34 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 		};
 	}
 	if (!model) {
-		return json({ message: "Unknown Upskillsafrica AI model." }, 400);
+		return openAiError("Unknown Upskillsafrica AI model.", 400, "unknown_model");
 	}
-	if (requiresOrganisationAccess(model) && !(await hasValidOrgCode(request, body, env, authUser))) {
+
+	const hasOrgAccess = requiresOrganisationAccess(model) ? await hasValidOrgCode(request, body, env, authUser) : false;
+	if (requiresOrganisationAccess(model) && !hasOrgAccess) {
 		return openAiError(
 			`This Upskillsafrica model (${model.id}) requires an organisation code. Run /kwinjira, choose "Add organisation code", then try again.`,
 			403,
 			"organisation_code_required",
 		);
 	}
+
+	const accountEntitlement = authUser ? await getActiveAccountEntitlement(authUser.id, env) : undefined;
+	const receiptEntitlement = receiptHeader ? await getValidEntitlement(receiptHeader, env) : undefined;
+	const paidEntitlement = accountEntitlement ? accountToEntitlement(accountEntitlement) : receiptEntitlement;
+	const entitlement = paidEntitlement || (hasOrgAccess ? createOrganisationCodeEntitlement(authUser) : undefined);
+	if (!entitlement) {
+		return openAiError(
+			"Upskillsafrica subscription or organisation access is required. Run /kwinjira to login, then use /org add <code> or complete payment from the console.",
+			402,
+			"subscription_required",
+		);
+	}
+
 	const quota = await assertModelQuota(entitlement, model, env);
 	const startedAt = Date.now();
-	const response = model.source === "openrouter" ? await routeOpenRouter(body, model, env) : await routeAzure(body, model, env);
+	const upstreamResponse = model.source === "openrouter" ? await routeOpenRouter(body, model, env) : await routeAzure(body, model, env);
+	const response = await normalizeProviderResponse(upstreamResponse, model);
 	if (response.ok && quota.trackGpt5) {
 		try {
 			const elapsedMs = Date.now() - startedAt;
@@ -1038,6 +1048,36 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 		}
 	}
 	return response;
+}
+
+function createOrganisationCodeEntitlement(user?: AuthUser): EntitlementRecord {
+	const now = new Date();
+	const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+	return {
+		ref: user ? `org-code:${user.id}` : "org-code:anonymous",
+		planId: "monthly",
+		amountRwf: 0,
+		status: "organisation_code",
+		createdAt: now.toISOString(),
+		expiresAt: expires.toISOString(),
+		gpt5DailyMsLimit: 24 * 60 * 60 * 1000,
+	};
+}
+
+async function normalizeProviderResponse(response: Response, model: ManagedModel): Promise<Response> {
+	if (response.ok) return response;
+	const contentType = response.headers.get("content-type") || "";
+	const bodyText = await response.text().catch(() => "");
+	if (bodyText.trim()) {
+		const headers = new Headers({ ...corsHeaders(), "Content-Type": contentType || "application/json" });
+		return new Response(bodyText, { status: response.status, headers });
+	}
+	const code = response.status === 402 ? "provider_payment_required" : "provider_error";
+	const message =
+		response.status === 402
+			? `The upstream provider rejected ${model.id} with HTTP 402/payment required. Try a free model, choose another Upskillsafrica model, or contact Upskillsafrica support to refresh provider credits.`
+			: `The upstream provider rejected ${model.id} with HTTP ${response.status}.`;
+	return openAiError(message, response.status, code);
 }
 
 async function hasValidOrgCode(request: Request, body: JsonObject, env: Env, user?: AuthUser): Promise<boolean> {
