@@ -38,6 +38,30 @@ function saveUpskillsafricaCredential(authStorage: AuthStorage, token: string, e
 	}
 }
 
+async function verifyAndAssignOrganisationCode(
+	token: string,
+	organisationCode: string,
+): Promise<{ label?: string; expiresAt?: unknown }> {
+	const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/auth/org-code/verify`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${token}`,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ organisationCode }),
+	});
+	const data = (await response.json().catch(() => ({}))) as {
+		ok?: boolean;
+		message?: string;
+		label?: string;
+		expiresAt?: unknown;
+	};
+	if (!response.ok || data.ok !== true) {
+		throw new Error(data.message || `Organisation-code verification failed with HTTP ${response.status}`);
+	}
+	return { label: data.label, expiresAt: data.expiresAt };
+}
+
 function printOrgHelp(): void {
 	console.log(`Usage:
   gihanga org status
@@ -81,13 +105,24 @@ export async function handleOrgCommand(args: string[], options: { agentDir: stri
 			process.exitCode = 1;
 			return true;
 		}
-		saveUpskillsafricaCredential(authStorage, token, {
-			...env,
-			UPSKILLSAFRICA_BACKEND_URL: UPSKILLS_AFRICA_BACKEND_URL,
-			UPSKILLSAFRICA_ORG_CODE: organisationCode,
-		});
-		console.log(chalk.green("Organisation code saved."));
-		console.log(chalk.dim("Choose an Upskillsafrica organisation model in Gihanga to use it."));
+		try {
+			const verified = await verifyAndAssignOrganisationCode(token, organisationCode);
+			saveUpskillsafricaCredential(authStorage, token, {
+				...env,
+				UPSKILLSAFRICA_BACKEND_URL: UPSKILLS_AFRICA_BACKEND_URL,
+				UPSKILLSAFRICA_ORG_CODE: organisationCode,
+			});
+			console.log(chalk.green("Organisation code verified and saved."));
+			if (verified.label) console.log(`Organisation: ${verified.label}`);
+			console.log(
+				chalk.dim(
+					"This account is now assigned on the backend; choose an organisation model in Gihanga to use it.",
+				),
+			);
+		} catch (error) {
+			console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+			process.exitCode = 1;
+		}
 		return true;
 	}
 

@@ -33,6 +33,12 @@ export const BUILTIN_SLASH_COMMANDS: ReadonlyArray<BuiltinSlashCommand> = [
 	{ name: "tree", description: "Genda mu giti cy'ikiganiro (hindura amashami)" },
 	{ name: "trust", description: "Bika icyemezo cyo kwizera poroje ku biganiro bizaza" },
 	{ name: "kwinjira", description: "Tegura authentication ya provider", argumentHint: "<provider>" },
+	{
+		name: "org",
+		description: "Reba cyangwa wongere organisation code ya Upskillsafrica",
+		argumentHint: "status|add|remove",
+	},
+	{ name: "doctor", description: "Suzuma installation, auth, models, na backend" },
 	{ name: "logout", description: "Kuraho authentication ya provider" },
 	{ name: "new", description: "Tangira ikiganiro gishya" },
 	{ name: "compact", description: "Gabanya context y'ikiganiro ukoresheje compact" },

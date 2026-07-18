@@ -2834,6 +2834,16 @@ export class InteractiveMode {
 				await this.handleLoginCommand(providerRef);
 				return;
 			}
+			if (text === "/org" || text.startsWith("/org ")) {
+				this.editor.setText("");
+				await this.handleOrgCommand(text);
+				return;
+			}
+			if (text === "/doctor") {
+				this.editor.setText("");
+				await this.handleDoctorCommand();
+				return;
+			}
 			if (text === "/logout") {
 				this.showOAuthSelector("logout");
 				this.editor.setText("");
@@ -5153,28 +5163,67 @@ export class InteractiveMode {
 		}
 	}
 
-	private saveUpskillsAfricaCredentials(token?: string, organisationCode?: string): void {
+	private getUpskillsAfricaCredentialSnapshot(): {
+		token?: string;
+		env: Record<string, string>;
+		organisationCode?: string;
+	} {
 		const existingAccount = this.session.modelRegistry.authStorage.get(UPSKILLS_AFRICA_PROVIDER_ID);
 		const existingModel = this.session.modelRegistry.authStorage.get(UPSKILLS_AFRICA_MODEL_PROVIDER_ID);
-		const resolvedToken =
-			token ||
+		const token =
 			(existingModel?.type === "api_key" ? existingModel.key : undefined) ||
 			(existingAccount?.type === "api_key" ? existingAccount.key : undefined);
-		if (!resolvedToken) {
-			throw new Error("Login first before saving organisation code.");
-		}
-		const existingEnv = {
+		const env = {
 			...(existingAccount?.type === "api_key" ? existingAccount.env : {}),
 			...(existingModel?.type === "api_key" ? existingModel.env : {}),
 		};
+		return { token, env, organisationCode: env.UPSKILLSAFRICA_ORG_CODE };
+	}
+
+	private saveUpskillsAfricaCredentials(token?: string, organisationCode?: string): void {
+		const snapshot = this.getUpskillsAfricaCredentialSnapshot();
+		const resolvedToken = token || snapshot.token;
+		if (!resolvedToken) {
+			throw new Error("Login first before saving organisation code.");
+		}
 		const env = {
-			...existingEnv,
+			...snapshot.env,
 			UPSKILLSAFRICA_BACKEND_URL: UPSKILLS_AFRICA_BACKEND_URL,
 			...(organisationCode ? { UPSKILLSAFRICA_ORG_CODE: organisationCode } : {}),
 		};
 		for (const providerId of [UPSKILLS_AFRICA_PROVIDER_ID, UPSKILLS_AFRICA_MODEL_PROVIDER_ID]) {
 			this.session.modelRegistry.authStorage.set(providerId, { type: "api_key", key: resolvedToken, env });
 		}
+	}
+
+	private removeUpskillsAfricaOrganisationCode(): void {
+		const snapshot = this.getUpskillsAfricaCredentialSnapshot();
+		if (!snapshot.token) throw new Error("No Upskillsafrica login found.");
+		const env: Record<string, string> = { ...snapshot.env, UPSKILLSAFRICA_BACKEND_URL: UPSKILLS_AFRICA_BACKEND_URL };
+		delete env.UPSKILLSAFRICA_ORG_CODE;
+		for (const providerId of [UPSKILLS_AFRICA_PROVIDER_ID, UPSKILLS_AFRICA_MODEL_PROVIDER_ID]) {
+			this.session.modelRegistry.authStorage.set(providerId, { type: "api_key", key: snapshot.token, env });
+		}
+	}
+
+	private async verifyUpskillsAfricaOrganisationCode(
+		token: string,
+		organisationCode: string,
+	): Promise<{ label?: string }> {
+		const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/auth/org-code/verify`, {
+			method: "POST",
+			headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+			body: JSON.stringify({ organisationCode }),
+		});
+		const data = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string; label?: string };
+		if (!response.ok || data.ok !== true) {
+			throw new Error(data.message || `Organisation-code verification failed with HTTP ${response.status}`);
+		}
+		return { label: data.label };
+	}
+
+	private maskOrganisationCode(code: string): string {
+		return code.length <= 8 ? "••••" : `${code.slice(0, 4)}…${code.slice(-4)}`;
 	}
 
 	private async showUpskillsAfricaOrganisationCodeDialog(): Promise<void> {
@@ -5198,17 +5247,99 @@ export class InteractiveMode {
 		try {
 			const organisationCode = (await dialog.showPrompt("Organisation code:")).trim();
 			if (!organisationCode) throw new Error("Organisation code is required.");
+			const snapshot = this.getUpskillsAfricaCredentialSnapshot();
+			if (!snapshot.token) throw new Error("Login first before saving organisation code.");
+			const verified = await this.verifyUpskillsAfricaOrganisationCode(snapshot.token, organisationCode);
 			this.saveUpskillsAfricaCredentials(undefined, organisationCode);
 			restoreEditor();
 			this.session.modelRegistry.refresh();
 			await this.updateAvailableProviderCount();
-			this.showStatus("Upskillsafrica organisation code saved. Choose an organisation model to continue.");
+			this.showStatus(
+				`Upskillsafrica organisation code verified and saved${verified.label ? ` for ${verified.label}` : ""}. Choose an organisation model to continue.`,
+			);
 			this.showModelSelector("upskillsafrica");
 		} catch (error: unknown) {
 			restoreEditor();
 			const errorMsg = error instanceof Error ? error.message : String(error);
 			if (errorMsg !== "Login cancelled") this.showError(`Failed to save organisation code: ${errorMsg}`);
 		}
+	}
+
+	private addInfoPanel(title: string, lines: string[]): void {
+		this.chatContainer.addChild(new Spacer(1));
+		this.chatContainer.addChild(
+			new Text(`${theme.fg("accent", title)}\n${lines.map((line) => theme.fg("muted", line)).join("\n")}`, 1, 1),
+		);
+		this.ui.requestRender();
+	}
+
+	private async handleOrgCommand(text: string): Promise<void> {
+		const [, action = "status", ...rest] = text.split(/\s+/);
+		if (action === "status") {
+			const snapshot = this.getUpskillsAfricaCredentialSnapshot();
+			this.addInfoPanel("Upskillsafrica organisation access", [
+				`Login: ${snapshot.token ? "configured" : "not configured"}`,
+				`Organisation code: ${snapshot.organisationCode ? this.maskOrganisationCode(snapshot.organisationCode) : "not set"}`,
+				snapshot.token ? "Use /org add <code> to verify a new code." : "Use /kwinjira to login first.",
+			]);
+			return;
+		}
+		if (action === "add" || action === "set") {
+			const organisationCode = rest.join(" ").trim();
+			if (!organisationCode) {
+				await this.showUpskillsAfricaOrganisationCodeDialog();
+				return;
+			}
+			try {
+				const snapshot = this.getUpskillsAfricaCredentialSnapshot();
+				if (!snapshot.token) throw new Error("Login first with /kwinjira before saving an organisation code.");
+				const verified = await this.verifyUpskillsAfricaOrganisationCode(snapshot.token, organisationCode);
+				this.saveUpskillsAfricaCredentials(undefined, organisationCode);
+				this.session.modelRegistry.refresh();
+				await this.updateAvailableProviderCount();
+				this.showStatus(
+					`Organisation code verified and saved${verified.label ? ` for ${verified.label}` : ""}. Choose an organisation model with /model upskillsafrica.`,
+				);
+			} catch (error) {
+				this.showError(error instanceof Error ? error.message : String(error));
+			}
+			return;
+		}
+		if (action === "remove" || action === "rm" || action === "clear") {
+			try {
+				this.removeUpskillsAfricaOrganisationCode();
+				this.session.modelRegistry.refresh();
+				await this.updateAvailableProviderCount();
+				this.showStatus("Organisation code removed from local Gihanga credentials.");
+			} catch (error) {
+				this.showError(error instanceof Error ? error.message : String(error));
+			}
+			return;
+		}
+		this.showWarning("Usage: /org status, /org add <code>, or /org remove");
+	}
+
+	private async handleDoctorCommand(): Promise<void> {
+		const checks: string[] = [];
+		const modelsJsonError = this.session.modelRegistry.getError();
+		const snapshot = this.getUpskillsAfricaCredentialSnapshot();
+		checks.push(`Version: ${VERSION}`);
+		checks.push(`Agent directory: ${getAgentDir()}`);
+		checks.push(`models.json: ${modelsJsonError ? `error - ${modelsJsonError}` : "OK"}`);
+		checks.push(`Upskillsafrica auth: ${snapshot.token ? "configured" : "not configured"}`);
+		checks.push(
+			`Organisation code: ${snapshot.organisationCode ? this.maskOrganisationCode(snapshot.organisationCode) : "not set"}`,
+		);
+		checks.push(
+			`Available models: ${this.session.modelRegistry.getAvailable().length} configured / ${this.session.modelRegistry.getAll().length} total`,
+		);
+		try {
+			const response = await fetch(`${UPSKILLS_AFRICA_BACKEND_URL}/health`);
+			checks.push(`Upskillsafrica backend: ${response.ok ? "reachable" : `HTTP ${response.status}`}`);
+		} catch (error) {
+			checks.push(`Upskillsafrica backend: ${error instanceof Error ? error.message : String(error)}`);
+		}
+		this.addInfoPanel("Gihanga doctor", checks);
 	}
 
 	private async showUpskillsAfricaSubscriptionStatus(token: string, email: string): Promise<void> {

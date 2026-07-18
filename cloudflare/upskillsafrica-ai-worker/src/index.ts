@@ -236,6 +236,9 @@ export default {
 			if (url.pathname === "/auth/me" && request.method === "GET") {
 				return await handleMe(request, env);
 			}
+			if (url.pathname === "/auth/org-code/verify" && request.method === "POST") {
+				return await handleOrgCodeVerify(request, env);
+			}
 			if (url.pathname === "/v1/realtime/models" && request.method === "GET") {
 				return await handleRealtimeModels(request, env);
 			}
@@ -612,6 +615,59 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
 	if (!user) return json({ message: "Login required." }, 401);
 	const entitlements = await getAccountEntitlements(user.id, env);
 	return json({ user, entitlements, models: await getModels(env), plans: getPlans(env) });
+}
+
+async function handleOrgCodeVerify(request: Request, env: Env): Promise<Response> {
+	if (!env.DATABASE_URL) return json({ message: "Organisation-code database is not configured." }, 503);
+	const user = await getUserFromRequest(request, env);
+	if (!user) return json({ message: "Login required." }, 401);
+	const body = await readJsonObject(request);
+	const organisationCode = readString(body.organisationCode) || readString(body.organizationCode) || readString(body.code);
+	if (!organisationCode) return json({ message: "organisationCode is required." }, 400);
+
+	const codeHash = await sha256Base64(organisationCode);
+	const sql = getSql(env);
+	const rows = await sql`
+		select code_hash, label, max_users, expires_at
+		from organisation_codes
+		where code_hash = ${codeHash}
+			and is_active = true
+			and (expires_at is null or expires_at > now())
+		limit 1
+	`;
+	if (rows.length === 0) return json({ ok: false, message: "Invalid or expired organisation code." }, 404);
+
+	const code = rows[0];
+	const alreadyAssigned = await sql`
+		select 1
+		from user_organisation_codes
+		where user_id = ${user.id} and code_hash = ${codeHash}
+		limit 1
+	`;
+	if (alreadyAssigned.length === 0 && typeof code.max_users === "number" && code.max_users > 0) {
+		const countRows = await sql`
+			select count(*)::int as user_count
+			from user_organisation_codes
+			where code_hash = ${codeHash}
+		`;
+		const userCount = Number(countRows[0]?.user_count ?? 0);
+		if (userCount >= code.max_users) {
+			return json({ ok: false, message: "Organisation code user limit reached." }, 409);
+		}
+	}
+
+	await sql`
+		insert into user_organisation_codes (user_id, code_hash)
+		values (${user.id}, ${codeHash})
+		on conflict (user_id, code_hash) do nothing
+	`;
+
+	return json({
+		ok: true,
+		assigned: true,
+		label: readString(code.label) || "Upskillsafrica organisation",
+		expiresAt: code.expires_at ?? null,
+	});
 }
 
 function getRealtimeModels(env: Env): string[] {
