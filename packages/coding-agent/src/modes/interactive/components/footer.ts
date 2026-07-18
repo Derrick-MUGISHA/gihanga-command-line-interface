@@ -55,7 +55,9 @@ export const KINYARWANDA_FOOTER_SAYINGS = [
 ] as const;
 
 function formatRwfCost(usdCost: number): string {
-	return `${Math.round(usdCost * USD_TO_RWF_RATE + 1e-9).toLocaleString()} RWF`;
+	const rwfCost = usdCost * USD_TO_RWF_RATE;
+	if (usdCost > 0 && rwfCost < 1) return "<1 RWF";
+	return `${Math.round(rwfCost + 1e-9).toLocaleString()} RWF`;
 }
 
 function stableIndex(text: string, modulo: number): number {

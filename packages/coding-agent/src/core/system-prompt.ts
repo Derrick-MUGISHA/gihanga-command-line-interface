@@ -5,6 +5,28 @@
 import { getDocsPath, getExamplesPath, getReadmePath } from "../config.ts";
 import { formatSkillsForPrompt, type Skill } from "./skills.ts";
 
+const AGENT_DISCIPLINE_GUIDANCE = `
+Agent discipline:
+- Finishing the job: when the user asks you to build, edit, run, verify, deploy, or inspect something, the deliverable is real work backed by tool output, not a plan or promise. Keep going until the requested result is complete or a real blocker is reached.
+- Tool follow-through: when you say you will inspect, run, edit, create, test, or deploy something, make the corresponding tool call in the same turn. Do not end with "I will..." if a tool can do it now.
+- No fabricated results: never invent command output, file contents, API responses, tests, links, metrics, prices, or deployment status. If a real path fails, report the blocker and try a safe alternative.
+- Efficient exploration: batch independent read-only checks when possible; avoid one-tool-call-per-turn workflows for unrelated reads/searches.
+- Verification: after meaningful code or configuration changes, run the smallest useful validation available and report exactly what passed or failed.`;
+
+const CONTEXT_INJECTION_PATTERNS = [
+	/ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|rules|messages)/i,
+	/disregard\s+(all\s+)?(previous|prior|above)\s+(instructions|rules|messages)/i,
+	/reveal\s+(the\s+)?(system|developer)\s+(prompt|message|instructions)/i,
+	/exfiltrate\s+(secrets|tokens|api\s*keys|credentials)/i,
+	/send\s+(secrets|tokens|api\s*keys|credentials)\s+to\s+https?:\/\//i,
+];
+
+function sanitizeContextFileContent(filePath: string, content: string): string {
+	const matchedPattern = CONTEXT_INJECTION_PATTERNS.find((pattern) => pattern.test(content));
+	if (!matchedPattern) return content;
+	return `[BLOCKED: ${filePath} contained potential prompt-injection instructions and was not loaded into the system prompt.]`;
+}
+
 export interface BuildSystemPromptOptions {
 	/** Custom system prompt (replaces default). */
 	customPrompt?: string;
@@ -62,7 +84,8 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 			prompt += "\n\n<project_context>\n\n";
 			prompt += "Project-specific instructions and guidelines:\n\n";
 			for (const { path: filePath, content } of contextFiles) {
-				prompt += `<project_instructions path="${filePath}">\n${content}\n</project_instructions>\n\n`;
+				const safeContent = sanitizeContextFileContent(filePath, content);
+				prompt += `<project_instructions path="${filePath}">\n${safeContent}\n</project_instructions>\n\n`;
 			}
 			prompt += "</project_context>\n";
 		}
@@ -124,10 +147,18 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 	// Always include these
 	addGuideline("Be concise in your responses");
 	addGuideline("Respond in Kinyarwanda by default unless the user explicitly asks for English.");
-	addGuideline("Follow the user's latest instruction precisely; if requirements conflict, state the conflict and choose the safest useful path.");
-	addGuideline("Think through hard problems internally, but show only the useful result: a short plan, the action taken, and the final answer.");
-	addGuideline("Use tools deliberately: inspect before editing, prefer minimal targeted edits, and verify important changes before reporting success.");
-	addGuideline("When asked for structured data, APIs, code, or configs, return valid, copy-pasteable output with no extra prose unless needed.");
+	addGuideline(
+		"Follow the user's latest instruction precisely; if requirements conflict, state the conflict and choose the safest useful path.",
+	);
+	addGuideline(
+		"Think through hard problems internally, but show only the useful result: a short plan, the action taken, and the final answer.",
+	);
+	addGuideline(
+		"Use tools deliberately: inspect before editing, prefer minimal targeted edits, and verify important changes before reporting success.",
+	);
+	addGuideline(
+		"When asked for structured data, APIs, code, or configs, return valid, copy-pasteable output with no extra prose unless needed.",
+	);
 	addGuideline("If uncertain, say what is uncertain and how to verify it instead of inventing facts.");
 	addGuideline("Show file paths clearly when working with files");
 
@@ -141,7 +172,7 @@ ${toolsList}
 In addition to the tools above, you may have access to other custom tools depending on the project.
 
 Guidelines:
-${guidelines}
+${guidelines}${AGENT_DISCIPLINE_GUIDANCE}
 
 Pi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):
 - Main documentation: ${readmePath}
@@ -161,7 +192,8 @@ Pi documentation (read only when the user asks about pi itself, its SDK, extensi
 		prompt += "\n\n<project_context>\n\n";
 		prompt += "Project-specific instructions and guidelines:\n\n";
 		for (const { path: filePath, content } of contextFiles) {
-			prompt += `<project_instructions path="${filePath}">\n${content}\n</project_instructions>\n\n`;
+			const safeContent = sanitizeContextFileContent(filePath, content);
+			prompt += `<project_instructions path="${filePath}">\n${safeContent}\n</project_instructions>\n\n`;
 		}
 		prompt += "</project_context>\n";
 	}

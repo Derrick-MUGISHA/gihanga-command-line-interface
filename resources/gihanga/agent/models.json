@@ -84,10 +84,10 @@
           ],
           "reasoning": true,
           "cost": {
-            "input": 15,
-            "output": 60,
-            "cacheRead": 3.75,
-            "cacheWrite": 15
+            "input": 1,
+            "output": 6,
+            "cacheRead": 0.1,
+            "cacheWrite": 1.25
           }
         },
         {
@@ -148,10 +148,10 @@
           ],
           "reasoning": true,
           "cost": {
-            "input": 15,
-            "output": 60,
-            "cacheRead": 3.75,
-            "cacheWrite": 15
+            "input": 1,
+            "output": 6,
+            "cacheRead": 0.1,
+            "cacheWrite": 1.25
           }
         },
         {
@@ -212,10 +212,10 @@
           ],
           "reasoning": true,
           "cost": {
-            "input": 15,
-            "output": 60,
-            "cacheRead": 3.75,
-            "cacheWrite": 15
+            "input": 1,
+            "output": 6,
+            "cacheRead": 0.1,
+            "cacheWrite": 1.25
           }
         },
         {
@@ -228,10 +228,10 @@
           ],
           "reasoning": true,
           "cost": {
-            "input": 15,
-            "output": 60,
-            "cacheRead": 3.75,
-            "cacheWrite": 15
+            "input": 1,
+            "output": 6,
+            "cacheRead": 0.1,
+            "cacheWrite": 1.25
           }
         }
       ],

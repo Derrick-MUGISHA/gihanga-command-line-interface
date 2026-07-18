@@ -24,6 +24,26 @@ import type {
 
 export type AgentEventSink = (event: AgentEvent) => Promise<void> | void;
 
+const MAX_LENGTH_CONTINUATIONS = 4;
+
+function createLengthContinuationMessage(attempt: number): AgentMessage {
+	return {
+		role: "user",
+		content:
+			attempt === 1
+				? "Continue exactly from where your previous response stopped. Do not repeat completed text."
+				: "Continue again from the exact stopping point. Do not repeat completed text; finish the remaining answer.",
+		timestamp: Date.now(),
+	};
+}
+
+function getContinuationMaxTokens(config: AgentLoopConfig, attempt: number): number | undefined {
+	const current = config.maxTokens ?? config.model.maxTokens;
+	if (!current || current <= 0) return undefined;
+	const modelCap = config.model.maxTokens && config.model.maxTokens > 0 ? config.model.maxTokens : current;
+	return Math.min(current * 2 ** attempt, Math.max(current, modelCap));
+}
+
 /**
  * Start an agent loop with a new prompt message.
  * The prompt is added to the context and events are emitted for it.
@@ -163,6 +183,7 @@ async function runLoop(
 	let currentContext = initialContext;
 	let config = initialConfig;
 	let firstTurn = true;
+	let lengthContinuationAttempts = 0;
 	// Check for steering messages at start (user may have typed while waiting)
 	let pendingMessages: AgentMessage[] = (await config.getSteeringMessages?.()) || [];
 
@@ -222,6 +243,23 @@ async function runLoop(
 			}
 
 			await emit({ type: "turn_end", message, toolResults });
+
+			if (message.stopReason === "length" && toolCalls.length === 0) {
+				if (lengthContinuationAttempts < MAX_LENGTH_CONTINUATIONS) {
+					lengthContinuationAttempts++;
+					const continuationMessage = createLengthContinuationMessage(lengthContinuationAttempts);
+					await emit({ type: "message_start", message: continuationMessage });
+					await emit({ type: "message_end", message: continuationMessage });
+					currentContext.messages.push(continuationMessage);
+					newMessages.push(continuationMessage);
+					const continuationMaxTokens = getContinuationMaxTokens(config, lengthContinuationAttempts);
+					config = continuationMaxTokens ? { ...config, maxTokens: continuationMaxTokens } : config;
+					hasMoreToolCalls = true;
+					continue;
+				}
+			} else {
+				lengthContinuationAttempts = 0;
+			}
 
 			const nextTurnContext = {
 				message,
