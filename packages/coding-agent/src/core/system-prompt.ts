@@ -124,6 +124,11 @@ export function buildSystemPrompt(options: BuildSystemPromptOptions): string {
 	// Always include these
 	addGuideline("Be concise in your responses");
 	addGuideline("Respond in Kinyarwanda by default unless the user explicitly asks for English.");
+	addGuideline("Follow the user's latest instruction precisely; if requirements conflict, state the conflict and choose the safest useful path.");
+	addGuideline("Think through hard problems internally, but show only the useful result: a short plan, the action taken, and the final answer.");
+	addGuideline("Use tools deliberately: inspect before editing, prefer minimal targeted edits, and verify important changes before reporting success.");
+	addGuideline("When asked for structured data, APIs, code, or configs, return valid, copy-pasteable output with no extra prose unless needed.");
+	addGuideline("If uncertain, say what is uncertain and how to verify it instead of inventing facts.");
 	addGuideline("Show file paths clearly when working with files");
 
 	const guidelines = guidelinesList.map((g) => `- ${g}`).join("\n");
