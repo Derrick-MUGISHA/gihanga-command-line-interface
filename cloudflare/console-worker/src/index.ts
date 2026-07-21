@@ -363,8 +363,12 @@ function pageShell(title: string, description: string, body: string): string {
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body { background: #0c1324; }
     * { box-sizing: border-box; }
+    main, section, article, aside, div, header, footer, nav { min-width: 0; }
     img, svg { max-width: 100%; }
+    a, p, li, h1, h2, h3, h4, span, label { overflow-wrap: anywhere; }
+    input, select, button, textarea { max-width: 100%; }
     pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
+    pre code { white-space: pre; }
     :not(pre) > code { overflow-wrap: anywhere; }
     .neo-grid { background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0); background-size: 32px 32px; }
     [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 700ms ease, transform 700ms ease; }
@@ -373,12 +377,23 @@ function pageShell(title: string, description: string, body: string): string {
     [data-reveal="terminal"].is-visible { transform: translateY(0) scale(1); }
     @media (max-width: 640px) {
       .w-\[90\%\] { width: calc(100% - 1.25rem) !important; }
-      h1 { font-size: clamp(2.35rem, 13vw, 3.75rem) !important; line-height: .98 !important; letter-spacing: -0.045em !important; }
-      h2 { font-size: clamp(1.7rem, 8vw, 2.35rem) !important; line-height: 1.08 !important; }
+      h1 { font-size: clamp(2.25rem, 12vw, 3.55rem) !important; line-height: .99 !important; letter-spacing: -0.045em !important; }
+      h2 { font-size: clamp(1.45rem, 7vw, 2.15rem) !important; line-height: 1.08 !important; }
+      h3 { line-height: 1.12 !important; }
+      p, li { line-height: 1.68 !important; }
       pre { font-size: 11px !important; line-height: 1.65 !important; padding: 1rem !important; border-radius: .95rem !important; }
       article, section { scroll-margin-top: 1rem; }
+      section[class*="p-8"], article[class*="p-8"], section[class*="p-6"], article[class*="p-6"], aside[class*="p-5"], a[class*="p-5"] { padding: 1rem !important; }
+      section[class*="py-8"], section[class*="py-10"], main[class*="py-8"] { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
       .mobile-pad { padding: 1rem !important; }
       .mobile-terminal { border-radius: 1.25rem !important; }
+      .rounded-\[2rem\] { border-radius: 1.25rem !important; }
+      .tracking-\[0\.16em\], .tracking-\[0\.2em\] { letter-spacing: .09em !important; }
+    }
+    @media (max-width: 380px) {
+      nav { gap: .35rem !important; padding-left: .6rem !important; padding-right: .6rem !important; }
+      nav a { font-size: 11px !important; }
+      h1 { font-size: clamp(2rem, 11vw, 3rem) !important; }
     }
     @media (prefers-reduced-motion: reduce) { [data-reveal] { opacity: 1; transform: none; transition: none; } }
   </style>
@@ -692,13 +707,21 @@ const CREDITS_HTML = `<!doctype html>
   <style>
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     * { box-sizing: border-box; }
+    main, section, div, footer, label { min-width: 0; }
+    a, p, h1, h2, span, label { overflow-wrap: anywhere; }
+    input, select, button { max-width: 100%; }
     pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
+    pre code { white-space: pre; }
     @media (max-width: 640px) {
       h1 { font-size: clamp(2rem, 11vw, 3rem) !important; line-height: 1.05 !important; }
+      h2 { font-size: clamp(1.4rem, 7vw, 2rem) !important; line-height: 1.12 !important; }
       main, footer { padding-left: .875rem !important; padding-right: .875rem !important; }
       section { padding: 1rem !important; }
       pre { font-size: 11px !important; line-height: 1.65 !important; padding: 1rem !important; }
       button { width: 100%; }
+    }
+    @media (max-width: 380px) {
+      main, footer { padding-left: .65rem !important; padding-right: .65rem !important; }
     }
   </style>
 </head>
