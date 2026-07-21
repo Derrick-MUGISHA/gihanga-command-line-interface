@@ -286,17 +286,21 @@ Write-Host "Run: gihanga --help"
 
 const SITE_NAV = `
   <a href="#content" class="skip-link fixed left-3 top-3 z-50 rounded-full bg-gihanga-emerald px-4 py-2 text-sm font-black text-[#003825] shadow-glow">Skip to content</a>
-  <header class="site-header relative mx-auto flex w-[90%] max-w-[1200px] flex-wrap items-center justify-between gap-3 px-0 py-4 sm:py-5">
+  <header class="site-header relative mx-auto grid w-[90%] max-w-[1200px] grid-cols-[auto_auto] items-center justify-between gap-3 px-0 py-4 sm:flex sm:flex-wrap sm:py-5">
     <a href="/" class="brand-link flex min-w-0 items-center gap-3" aria-label="Gihanga Console home">
       <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white shadow-glow sm:h-12 sm:w-12">
         <img src="${UPSKILLSAFRICA_LOGO_SVG}" alt="UpskillsAfrica Foundation" class="h-8 w-8 object-contain sm:h-9 sm:w-9" loading="eager" decoding="async" />
       </span>
-      <div class="min-w-0">
+      <div class="brand-copy min-w-0">
         <p class="truncate text-base font-black tracking-tight sm:text-lg">Gihanga CLI <span class="ml-1 rounded-md border border-gihanga-emerald/30 bg-gihanga-emerald/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-gihanga-emerald sm:ml-2 sm:px-2 sm:py-1 sm:text-[10px]">Alpha</span></p>
         <p class="hidden text-xs text-gihanga-muted sm:block">Kinyarwanda-first terminal AI · v0.1.0-alpha.3</p>
       </div>
     </a>
-    <nav aria-label="Primary navigation" class="mobile-nav order-3 flex w-full items-center gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/5 px-2 py-2 text-xs text-[#dce1fb] backdrop-blur sm:order-none sm:w-auto sm:justify-end sm:gap-2 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+    <button type="button" class="menu-toggle inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gihanga-text backdrop-blur sm:hidden" aria-controls="primary-nav" aria-expanded="false" aria-label="Open navigation menu">
+      <span class="sr-only">Menu</span>
+      <svg class="menu-icon h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <nav id="primary-nav" aria-label="Primary navigation" class="mobile-nav order-3 col-span-2 hidden w-full rounded-2xl border border-white/10 bg-[#07101f]/95 p-2 text-sm text-[#dce1fb] shadow-2xl shadow-emerald-950/20 backdrop-blur sm:order-none sm:col-auto sm:flex sm:w-auto sm:justify-end sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
       <a class="nav-pill hover:text-gihanga-text" href="/#install">Install</a>
       <a class="nav-pill hover:text-gihanga-text" href="/docs">Docs</a>
       <a class="nav-pill hover:text-gihanga-text" href="/credits">Credits</a>
@@ -381,12 +385,16 @@ function pageShell(title: string, description: string, body: string): string {
     :not(pre) > code { overflow-wrap: anywhere; }
     .skip-link { transform: translateY(-140%); transition: transform 180ms ease; }
     .skip-link:focus { transform: translateY(0); }
-    .nav-pill { display: inline-flex; min-height: 42px; flex: 0 0 auto; align-items: center; border-radius: 999px; padding: .55rem .85rem; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .brand-copy { display: none; }
+    .nav-pill { display: flex; min-height: 44px; width: 100%; align-items: center; border-radius: .9rem; padding: .7rem .85rem; }
     .nav-pill:hover { background: rgba(255,255,255,.06); }
-    .mobile-nav { scrollbar-width: none; scroll-snap-type: x proximity; }
-    .mobile-nav::-webkit-scrollbar { display: none; }
-    .mobile-nav > a { scroll-snap-align: start; }
+    .mobile-nav.is-open { display: grid; gap: .15rem; }
     .copy-button { min-height: 38px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #dce1fb; }
+    @media (min-width: 640px) {
+      .brand-copy { display: block; }
+      .nav-pill { width: auto; border-radius: 999px; padding: .55rem .85rem; }
+    }
     .copy-button:hover { background: rgba(52,211,153,.13); color: #F1F5F9; }
     .neo-grid { background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0); background-size: 32px 32px; }
     [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 700ms ease, transform 700ms ease; }
@@ -404,9 +412,9 @@ function pageShell(title: string, description: string, body: string): string {
       section[class*="p-8"], article[class*="p-8"], section[class*="p-6"], article[class*="p-6"], aside[class*="p-5"], a[class*="p-5"] { padding: 1rem !important; }
       section[class*="py-8"], section[class*="py-10"], main[class*="py-8"] { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
       .site-header { width: calc(100% - 1rem) !important; padding-bottom: .5rem !important; }
-      .brand-link { width: 100%; }
-      .mobile-nav { margin-inline: -.125rem; padding-inline: .4rem !important; }
-      .nav-pill { min-height: 44px; padding-inline: .8rem; }
+      .brand-link { width: auto; }
+      .mobile-nav { margin-top: .25rem; }
+      .nav-pill { min-height: 46px; padding-inline: .9rem; }
       .copy-button { width: 100%; margin-top: .5rem; }
       .mobile-pad { padding: 1rem !important; }
       .mobile-terminal { border-radius: 1.25rem !important; }
@@ -447,6 +455,23 @@ function pageShell(title: string, description: string, body: string): string {
       revealItems.forEach((item) => observer.observe(item));
     } else {
       revealItems.forEach((item) => item.classList.add('is-visible'));
+    }
+    const menuToggle = document.querySelector('.menu-toggle');
+    const primaryNav = document.querySelector('#primary-nav');
+    if (menuToggle && primaryNav) {
+      menuToggle.addEventListener('click', () => {
+        const isOpen = menuToggle.getAttribute('aria-expanded') === 'true';
+        menuToggle.setAttribute('aria-expanded', String(!isOpen));
+        menuToggle.setAttribute('aria-label', isOpen ? 'Open navigation menu' : 'Close navigation menu');
+        primaryNav.classList.toggle('is-open', !isOpen);
+      });
+      primaryNav.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => {
+          menuToggle.setAttribute('aria-expanded', 'false');
+          menuToggle.setAttribute('aria-label', 'Open navigation menu');
+          primaryNav.classList.remove('is-open');
+        });
+      });
     }
     document.querySelectorAll('[data-copy]').forEach((button) => {
       button.addEventListener('click', async () => {
