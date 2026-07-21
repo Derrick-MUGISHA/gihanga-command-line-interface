@@ -388,17 +388,28 @@ function pageShell(title: string, description: string, body: string): string {
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     .site-header { border-bottom-color: rgba(148,163,184,.18); box-shadow: inset 0 -1px 0 rgba(52,211,153,.10), 0 18px 40px rgba(2,6,23,.18); }
     .brand-copy { display: none; }
-    .nav-pill { display: flex; min-height: 44px; width: 100%; align-items: center; border-radius: .9rem; padding: .7rem .85rem; }
-    .nav-pill:hover { background: rgba(255,255,255,.08); }
-    .menu-toggle:hover { border-color: rgba(52,211,153,.42); background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(52,211,153,.16)); }
-    .mobile-nav { box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 45px rgba(2,6,23,.28); }
-    .mobile-nav.is-open { display: grid; gap: .15rem; }
+    .nav-pill { position: relative; display: flex; min-height: 44px; width: 100%; align-items: center; border-radius: .9rem; padding: .7rem .85rem; color: #dce1fb; transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+    .nav-pill:hover { background: rgba(255,255,255,.09); color: #F8FAFC; transform: translateX(2px); }
+    .nav-pill:active { transform: translateX(2px) scale(.985); }
+    .nav-pill[aria-current="page"], .nav-pill.is-active { border: 1px solid rgba(52,211,153,.30); background: linear-gradient(135deg, rgba(52,211,153,.20), rgba(34,211,238,.10)); color: #F8FAFC; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 25px rgba(16,185,129,.12); }
+    .nav-pill[aria-current="page"]::before, .nav-pill.is-active::before { content: ""; margin-right: .55rem; height: .48rem; width: .48rem; flex: 0 0 auto; border-radius: 999px; background: #34D399; box-shadow: 0 0 14px rgba(52,211,153,.75); }
+    .menu-toggle { transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+    .menu-toggle:hover { border-color: rgba(52,211,153,.42); background: linear-gradient(135deg, rgba(255,255,255,.15), rgba(52,211,153,.16)); box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 12px 26px rgba(16,185,129,.12); }
+    .menu-toggle:active { transform: scale(.96); }
+    .menu-toggle[aria-expanded="true"] { border-color: rgba(52,211,153,.52); background: linear-gradient(135deg, rgba(52,211,153,.22), rgba(34,211,238,.12)); color: #F8FAFC; }
+    .mobile-nav { position: relative; overflow: hidden; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(52,211,153,.08), 0 18px 45px rgba(2,6,23,.34); }
+    .mobile-nav::before { content: ""; pointer-events: none; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 12% 0%, rgba(52,211,153,.18), transparent 34%), radial-gradient(circle at 100% 20%, rgba(34,211,238,.10), transparent 35%); opacity: 0; transition: opacity 180ms ease; }
+    .mobile-nav.is-open { display: grid; gap: .2rem; padding: .7rem; border-color: rgba(52,211,153,.20); }
+    .mobile-nav.is-open::before { opacity: 1; }
+    .mobile-nav > a { z-index: 1; }
     .copy-button { min-height: 38px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #dce1fb; }
     @media (min-width: 640px) {
       .brand-copy { display: block; }
       .site-header { background: linear-gradient(180deg, rgba(7,16,31,.78), rgba(7,16,31,.52)); }
-      .nav-pill { width: auto; border-radius: 999px; padding: .55rem .85rem; }
-      .nav-pill:hover { background: rgba(255,255,255,.10); }
+      .nav-pill { width: auto; border: 1px solid transparent; border-radius: 999px; padding: .55rem .9rem; }
+      .nav-pill:hover { background: rgba(255,255,255,.11); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(2,6,23,.18); }
+      .nav-pill:active { transform: translateY(0) scale(.98); }
+      .nav-pill[aria-current="page"]::before, .nav-pill.is-active::before { display: none; }
     }
     .copy-button:hover { background: rgba(52,211,153,.13); color: #F1F5F9; }
     .neo-grid { background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0); background-size: 32px 32px; }
@@ -463,19 +474,32 @@ function pageShell(title: string, description: string, body: string): string {
     }
     const menuToggle = document.querySelector('.menu-toggle');
     const primaryNav = document.querySelector('#primary-nav');
+    const menuIcon = document.querySelector('.menu-icon path');
+    const setMenuOpen = (open) => {
+      if (!menuToggle || !primaryNav) return;
+      menuToggle.setAttribute('aria-expanded', String(open));
+      menuToggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+      primaryNav.classList.toggle('is-open', open);
+      if (menuIcon) menuIcon.setAttribute('d', open ? 'M6 6l12 12M18 6L6 18' : 'M4 7h16M4 12h16M4 17h16');
+    };
+    if (primaryNav) {
+      const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+      primaryNav.querySelectorAll('a').forEach((link) => {
+        const linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname.replace(/\/$/, '') || '/';
+        const isActive = currentPath === linkPath || (currentPath === '/' && link.getAttribute('href') === '/#install');
+        if (isActive) link.setAttribute('aria-current', 'page');
+      });
+    }
     if (menuToggle && primaryNav) {
       menuToggle.addEventListener('click', () => {
         const isOpen = menuToggle.getAttribute('aria-expanded') === 'true';
-        menuToggle.setAttribute('aria-expanded', String(!isOpen));
-        menuToggle.setAttribute('aria-label', isOpen ? 'Open navigation menu' : 'Close navigation menu');
-        primaryNav.classList.toggle('is-open', !isOpen);
+        setMenuOpen(!isOpen);
       });
       primaryNav.querySelectorAll('a').forEach((link) => {
-        link.addEventListener('click', () => {
-          menuToggle.setAttribute('aria-expanded', 'false');
-          menuToggle.setAttribute('aria-label', 'Open navigation menu');
-          primaryNav.classList.remove('is-open');
-        });
+        link.addEventListener('click', () => setMenuOpen(false));
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setMenuOpen(false);
       });
     }
     document.querySelectorAll('[data-copy]').forEach((button) => {
