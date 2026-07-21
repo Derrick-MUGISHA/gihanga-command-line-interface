@@ -429,7 +429,9 @@ function pageShell(title: string, description: string, body: string): string {
   ${body}
   ${SITE_FOOTER}
   <script>
-    lucide.createIcons();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
     const revealItems = document.querySelectorAll('[data-reveal]');
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver((entries) => {
@@ -561,19 +563,19 @@ $ gihanga
       <div class="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
           <p class="font-mono text-xs font-bold uppercase tracking-[0.14em] text-gihanga-emerald">Install scripts</p>
-          <h2 class="mt-2 text-3xl font-black text-gihanga-text sm:text-4xl">Install kuri OS yawe</h2>
-          <p class="mt-2 max-w-2xl text-gihanga-muted">Installer ikora clone/update, install, build, npm link, hanyuma ishyira skills, data, scripts, na curated Upskillsafrica model config muri <code>~/.gihanga/agent</code>.</p>
+          <h2 class="mt-2 text-3xl font-black text-gihanga-text sm:text-4xl">Install kuri mudasobwa yawe</h2>
+          <p class="mt-2 max-w-2xl text-gihanga-muted">Hitamo command ijyanye na mudasobwa yawe. Installer itegura Gihanga CLI, ubumenyi bwa project, scripts zifasha, na Upskillsafrica models kuri machine yawe.</p>
         </div>
-        <a href="/docs#subscription" class="text-sm font-semibold text-gihanga-emerald hover:text-[#68fcbf]">Reba subscription flow →</a>
+        <a href="/docs#subscription" class="text-sm font-semibold text-gihanga-emerald hover:text-[#68fcbf]">Reba uko credits zikora →</a>
       </div>
       <div class="grid gap-5 lg:grid-cols-2">
         <article class="mobile-pad rounded-2xl border border-cyan-400/20 bg-gihanga-glass p-6 backdrop-blur">
-          <div class="mb-4 flex items-center justify-between gap-3"><div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-cyan-400/15 text-[#a2eeff]"><i data-lucide="monitor" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">🐧 🍎 Linux / macOS</h3><p class="text-sm text-gihanga-muted">Bash installer</p></div></div></div>
-          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:pr-20 sm:text-sm"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div>
+          <div class="mb-4 flex items-center justify-between gap-3"><div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-cyan-400/15 text-[#a2eeff]"><i data-lucide="monitor" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">Linux / macOS</h3><p class="text-sm text-gihanga-muted">Run this in Terminal.</p></div></div></div>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:text-sm"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div>
         </article>
         <article class="mobile-pad rounded-2xl border border-blue-400/20 bg-gihanga-glass p-6 backdrop-blur">
-          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-400/15 text-blue-200"><i data-lucide="panel-top" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">🪟 Windows PowerShell</h3><p class="text-sm text-gihanga-muted">Native Windows installer</p></div></div>
-          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:pr-20 sm:text-sm"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div>
+          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-400/15 text-blue-200"><i data-lucide="panel-top" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">Windows PowerShell</h3><p class="text-sm text-gihanga-muted">Run this in PowerShell.</p></div></div>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:text-sm"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div>
         </article>
       </div>
     </section>
@@ -636,8 +638,8 @@ const DOCS_HTML = pageShell(
         <article data-reveal id="install" class="rounded-xl border border-white/10 bg-gihanga-glass p-6">
           <div class="flex items-start gap-4"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gihanga-emerald/10 text-gihanga-emerald"><i data-lucide="download" class="h-6 w-6"></i></span><div><p class="font-mono text-xs font-bold uppercase tracking-[0.1em] text-gihanga-emerald">Step 01</p><h2 class="text-2xl font-bold text-gihanga-text">Install Gihanga</h2></div></div>
           <div class="mt-5 grid gap-4 lg:grid-cols-2">
-            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Linux / macOS</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf] sm:pr-20"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div></div>
-            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Windows PowerShell</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf] sm:pr-20"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div></div>
+            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Linux / macOS</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div></div>
+            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Windows PowerShell</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div></div>
           </div>
           <p class="mt-4 text-[#dce1fb]">Installer ikora clone/update, install/build/link quietly, hanyuma ishyira Gihanga ubumenyi, scripts, data, na model catalog muri <code>~/.gihanga/agent</code>.</p>
         </article>
