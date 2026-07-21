@@ -285,8 +285,9 @@ Write-Host "Run: gihanga --help"
 
 
 const SITE_NAV = `
-  <header class="relative mx-auto flex w-[90%] max-w-[1200px] flex-wrap items-center justify-between gap-3 px-0 py-4 sm:py-5">
-    <a href="/" class="flex min-w-0 items-center gap-3">
+  <a href="#content" class="skip-link fixed left-3 top-3 z-50 rounded-full bg-gihanga-emerald px-4 py-2 text-sm font-black text-[#003825] shadow-glow">Skip to content</a>
+  <header class="site-header relative mx-auto flex w-[90%] max-w-[1200px] flex-wrap items-center justify-between gap-3 px-0 py-4 sm:py-5">
+    <a href="/" class="brand-link flex min-w-0 items-center gap-3" aria-label="Gihanga Console home">
       <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white shadow-glow sm:h-12 sm:w-12">
         <img src="${UPSKILLSAFRICA_LOGO_SVG}" alt="UpskillsAfrica Foundation" class="h-8 w-8 object-contain sm:h-9 sm:w-9" loading="eager" decoding="async" />
       </span>
@@ -295,19 +296,24 @@ const SITE_NAV = `
         <p class="hidden text-xs text-gihanga-muted sm:block">Kinyarwanda-first terminal AI · v0.1.0-alpha.3</p>
       </div>
     </a>
-    <nav class="order-3 flex w-full items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-[#dce1fb] backdrop-blur sm:order-none sm:w-auto sm:justify-end sm:gap-5 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
-      <a class="hover:text-gihanga-text" href="/#install">Install</a>
-      <a class="hover:text-gihanga-text" href="/docs">Docs</a>
-      <a class="hover:text-gihanga-text" href="/privacy">Privacy</a>
-      <a class="hover:text-gihanga-text" href="/terms">Terms</a>
+    <nav aria-label="Primary navigation" class="mobile-nav order-3 flex w-full items-center gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/5 px-2 py-2 text-xs text-[#dce1fb] backdrop-blur sm:order-none sm:w-auto sm:justify-end sm:gap-2 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
+      <a class="nav-pill hover:text-gihanga-text" href="/#install">Install</a>
+      <a class="nav-pill hover:text-gihanga-text" href="/docs">Docs</a>
+      <a class="nav-pill hover:text-gihanga-text" href="/credits">Credits</a>
+      <a class="nav-pill hover:text-gihanga-text" href="/privacy">Privacy</a>
+      <a class="nav-pill hover:text-gihanga-text" href="/terms">Terms</a>
     </nav>
   </header>`;
 
 const SITE_FOOTER = `
   <footer class="relative mx-auto w-[90%] max-w-[1200px] px-0 py-10 text-sm text-slate-500">
-    <div class="flex flex-col justify-between gap-4 border-t border-white/10 pt-6 sm:flex-row">
+    <div class="grid gap-5 border-t border-white/10 pt-6 sm:grid-cols-[1fr_auto] sm:items-start">
       <p>Gihanga CLI - Kinyarwanda-first terminal AI coding assistant · Alpha v0.1.0-alpha.3</p>
-      <a class="text-gihanga-emerald hover:text-[#68fcbf]" href="https://upskillsafrica.org" rel="noopener noreferrer">Powered by Upskillsafrica Foundation</a>
+      <nav aria-label="Footer navigation" class="flex flex-wrap gap-x-4 gap-y-2 sm:justify-end">
+        <a class="text-gihanga-emerald hover:text-[#68fcbf]" href="/docs">Docs</a>
+        <a class="text-gihanga-emerald hover:text-[#68fcbf]" href="/credits">Credits</a>
+        <a class="text-gihanga-emerald hover:text-[#68fcbf]" href="https://upskillsafrica.org" rel="noopener noreferrer">Upskillsafrica Foundation</a>
+      </nav>
     </div>
   </footer>`;
 
@@ -360,16 +366,28 @@ function pageShell(title: string, description: string, body: string): string {
     };
   </script>
   <style>
+    html { color-scheme: dark; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
-    body { background: #0c1324; }
+    body { background: #0c1324; min-height: 100svh; }
     * { box-sizing: border-box; }
     main, section, article, aside, div, header, footer, nav { min-width: 0; }
     img, svg { max-width: 100%; }
     a, p, li, h1, h2, h3, h4, span, label { overflow-wrap: anywhere; }
-    input, select, button, textarea { max-width: 100%; }
+    input, select, button, textarea { max-width: 100%; font: inherit; }
+    a, button, input, select, textarea { touch-action: manipulation; }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(52,211,153,.95); outline-offset: 3px; }
     pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
     pre code { white-space: pre; }
     :not(pre) > code { overflow-wrap: anywhere; }
+    .skip-link { transform: translateY(-140%); transition: transform 180ms ease; }
+    .skip-link:focus { transform: translateY(0); }
+    .nav-pill { display: inline-flex; min-height: 42px; flex: 0 0 auto; align-items: center; border-radius: 999px; padding: .55rem .85rem; }
+    .nav-pill:hover { background: rgba(255,255,255,.06); }
+    .mobile-nav { scrollbar-width: none; scroll-snap-type: x proximity; }
+    .mobile-nav::-webkit-scrollbar { display: none; }
+    .mobile-nav > a { scroll-snap-align: start; }
+    .copy-button { min-height: 38px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); color: #dce1fb; }
+    .copy-button:hover { background: rgba(52,211,153,.13); color: #F1F5F9; }
     .neo-grid { background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0); background-size: 32px 32px; }
     [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 700ms ease, transform 700ms ease; }
     [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
@@ -385,24 +403,31 @@ function pageShell(title: string, description: string, body: string): string {
       article, section { scroll-margin-top: 1rem; }
       section[class*="p-8"], article[class*="p-8"], section[class*="p-6"], article[class*="p-6"], aside[class*="p-5"], a[class*="p-5"] { padding: 1rem !important; }
       section[class*="py-8"], section[class*="py-10"], main[class*="py-8"] { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+      .site-header { width: calc(100% - 1rem) !important; padding-bottom: .5rem !important; }
+      .brand-link { width: 100%; }
+      .mobile-nav { margin-inline: -.125rem; padding-inline: .4rem !important; }
+      .nav-pill { min-height: 44px; padding-inline: .8rem; }
+      .copy-button { width: 100%; margin-top: .5rem; }
       .mobile-pad { padding: 1rem !important; }
       .mobile-terminal { border-radius: 1.25rem !important; }
+      .ambient-blob { opacity: .5; filter: blur(36px); }
       .rounded-\[2rem\] { border-radius: 1.25rem !important; }
       .tracking-\[0\.16em\], .tracking-\[0\.2em\] { letter-spacing: .09em !important; }
     }
     @media (max-width: 380px) {
-      nav { gap: .35rem !important; padding-left: .6rem !important; padding-right: .6rem !important; }
+      nav { gap: .35rem !important; }
       nav a { font-size: 11px !important; }
       h1 { font-size: clamp(2rem, 11vw, 3rem) !important; }
     }
-    @media (prefers-reduced-motion: reduce) { [data-reveal] { opacity: 1; transform: none; transition: none; } }
+    @media (hover: none) { .hover\:-translate-y-0\.5:hover { transform: none !important; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } [data-reveal] { opacity: 1; transform: none; transition: none; } }
   </style>
 </head>
 <body class="min-h-screen bg-gihanga-bg font-sans text-gihanga-text antialiased neo-grid">
-  <div class="pointer-events-none fixed inset-0 overflow-hidden">
-    <div class="absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-gihanga-emerald/20 blur-3xl"></div>
-    <div class="absolute right-0 top-48 h-96 w-96 rounded-full bg-gihanga-cyan/10 blur-3xl"></div>
-    <div class="absolute bottom-0 left-0 h-96 w-96 rounded-full bg-gihanga-amber/10 blur-3xl"></div>
+  <div class="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+    <div class="ambient-blob absolute left-1/2 top-0 h-80 w-80 -translate-x-1/2 rounded-full bg-gihanga-emerald/20 blur-3xl"></div>
+    <div class="ambient-blob absolute right-0 top-48 h-96 w-96 rounded-full bg-gihanga-cyan/10 blur-3xl"></div>
+    <div class="ambient-blob absolute bottom-0 left-0 h-96 w-96 rounded-full bg-gihanga-amber/10 blur-3xl"></div>
   </div>
   ${SITE_NAV}
   ${body}
@@ -423,6 +448,19 @@ function pageShell(title: string, description: string, body: string): string {
     } else {
       revealItems.forEach((item) => item.classList.add('is-visible'));
     }
+    document.querySelectorAll('[data-copy]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const value = button.getAttribute('data-copy') || '';
+        const original = button.textContent;
+        try {
+          await navigator.clipboard.writeText(value);
+          button.textContent = 'Copied';
+        } catch (_) {
+          button.textContent = 'Select text';
+        }
+        window.setTimeout(() => { button.textContent = original; }, 1600);
+      });
+    });
   </script>
 </body>
 </html>`;
@@ -432,7 +470,7 @@ const HOME_HTML = pageShell(
 	"Gihanga CLI - Kinyarwanda-first AI coding assistant",
 	"Install Gihanga CLI, a Kinyarwanda-first terminal AI coding assistant powered by Upskillsafrica.",
 	`
-  <main class="relative">
+  <main id="content" class="relative">
     <section class="mx-auto grid w-[90%] max-w-[1200px] items-center gap-8 py-6 sm:py-10 lg:grid-cols-[1.03fr_0.97fr] lg:py-16">
       <div data-reveal>
         <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-gihanga-emerald/25 bg-gihanga-emerald/10 px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-gihanga-emerald">
@@ -500,11 +538,11 @@ $ gihanga
       <div class="grid gap-5 lg:grid-cols-2">
         <article class="mobile-pad rounded-2xl border border-cyan-400/20 bg-gihanga-glass p-6 backdrop-blur">
           <div class="mb-4 flex items-center justify-between gap-3"><div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-cyan-400/15 text-[#a2eeff]"><i data-lucide="monitor" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">🐧 🍎 Linux / macOS</h3><p class="text-sm text-gihanga-muted">Bash installer</p></div></div></div>
-          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:pr-20 sm:text-sm"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre></div>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:pr-20 sm:text-sm"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div>
         </article>
         <article class="mobile-pad rounded-2xl border border-blue-400/20 bg-gihanga-glass p-6 backdrop-blur">
           <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-400/15 text-blue-200"><i data-lucide="panel-top" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">🪟 Windows PowerShell</h3><p class="text-sm text-gihanga-muted">Native Windows installer</p></div></div>
-          <pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:text-sm"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:pr-20 sm:text-sm"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div>
         </article>
       </div>
     </section>
@@ -521,7 +559,7 @@ const DOCS_HTML = pageShell(
 	"Gihanga Docs - Install, login, credits, ubumenyi",
 	"Documentation for installing and using Gihanga CLI with Upskillsafrica models, Mobile Money subscriptions, and Kinyarwanda-first workflows.",
 	`
-  <main data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
+  <main id="content" data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
     <section class="rounded-2xl border border-white/10 bg-gihanga-glass p-8 backdrop-blur">
       <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
         <div>
@@ -567,8 +605,8 @@ const DOCS_HTML = pageShell(
         <article data-reveal id="install" class="rounded-xl border border-white/10 bg-gihanga-glass p-6">
           <div class="flex items-start gap-4"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gihanga-emerald/10 text-gihanga-emerald"><i data-lucide="download" class="h-6 w-6"></i></span><div><p class="font-mono text-xs font-bold uppercase tracking-[0.1em] text-gihanga-emerald">Step 01</p><h2 class="text-2xl font-bold text-gihanga-text">Install Gihanga</h2></div></div>
           <div class="mt-5 grid gap-4 lg:grid-cols-2">
-            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Linux / macOS</p><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre></div>
-            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Windows PowerShell</p><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre></div>
+            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Linux / macOS</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf] sm:pr-20"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div></div>
+            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Windows PowerShell</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf] sm:pr-20"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold sm:absolute sm:right-3 sm:top-3 sm:mt-0">Copy</button></div></div>
           </div>
           <p class="mt-4 text-[#dce1fb]">Installer ikora clone/update, install/build/link quietly, hanyuma ishyira Gihanga ubumenyi, scripts, data, na model catalog muri <code>~/.gihanga/agent</code>.</p>
         </article>
@@ -635,7 +673,7 @@ const PRIVACY_HTML = pageShell(
 	"Gihanga Privacy Policy",
 	"Privacy Policy for Gihanga CLI, Upskillsafrica AI accounts, Mobile Money credits, and terminal AI workflows.",
 	`
-  <main data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
+  <main id="content" data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
     <section class="rounded-2xl border border-white/10 bg-gihanga-glass p-8 backdrop-blur">
       <p class="font-mono text-xs font-bold uppercase tracking-[0.16em] text-gihanga-emerald">Privacy Policy</p>
       <h1 class="mt-3 max-w-4xl text-4xl font-black leading-tight tracking-[-0.035em] text-gihanga-text sm:text-5xl">How Gihanga and Upskillsafrica protect your data</h1>
@@ -662,7 +700,7 @@ const TERMS_HTML = pageShell(
 	"Gihanga Terms of Service",
 	"Terms of Service for using Gihanga CLI, Upskillsafrica AI models, Mobile Money credits, and organisation model access.",
 	`
-  <main data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
+  <main id="content" data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
     <section class="rounded-2xl border border-white/10 bg-gihanga-glass p-8 backdrop-blur">
       <p class="font-mono text-xs font-bold uppercase tracking-[0.16em] text-gihanga-emerald">Terms of Service</p>
       <h1 class="mt-3 max-w-4xl text-4xl font-black leading-tight tracking-[-0.035em] text-gihanga-text sm:text-5xl">Rules for using Gihanga CLI and Upskillsafrica AI</h1>
@@ -705,13 +743,18 @@ const CREDITS_HTML = `<!doctype html>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Hanken Grotesk','ui-sans-serif','system-ui'],mono:['JetBrains Mono','ui-monospace']},colors:{gihanga:{bg:'#0c1324',deep:'#020617',glass:'rgba(15, 23, 42, 0.60)',emerald:'#34D399',cyan:'#22D3EE',amber:'#FBBF24',text:'#F1F5F9',muted:'#94A3B8'}}}}}</script>
   <style>
+    html { color-scheme: dark; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+    body { min-height: 100svh; }
     * { box-sizing: border-box; }
-    main, section, div, footer, label { min-width: 0; }
+    main, section, div, footer, label, header, nav { min-width: 0; }
     a, p, h1, h2, span, label { overflow-wrap: anywhere; }
-    input, select, button { max-width: 100%; }
+    input, select, button { max-width: 100%; font: inherit; touch-action: manipulation; }
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(52,211,153,.95); outline-offset: 3px; }
     pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
     pre code { white-space: pre; }
+    .skip-link { transform: translateY(-140%); transition: transform 180ms ease; }
+    .skip-link:focus { transform: translateY(0); }
     @media (max-width: 640px) {
       h1 { font-size: clamp(2rem, 11vw, 3rem) !important; line-height: 1.05 !important; }
       h2 { font-size: clamp(1.4rem, 7vw, 2rem) !important; line-height: 1.12 !important; }
@@ -726,23 +769,27 @@ const CREDITS_HTML = `<!doctype html>
   </style>
 </head>
 <body class="min-h-screen bg-gihanga-bg font-sans text-gihanga-text">
-  <main class="mx-auto max-w-5xl px-6 py-8 sm:py-12">
-    <a href="/" class="text-sm text-gihanga-emerald hover:text-[#68fcbf]">← Gihanga Console</a>
+  <a href="#content" class="skip-link fixed left-3 top-3 z-50 rounded-full bg-gihanga-emerald px-4 py-2 text-sm font-black text-[#003825]">Skip to content</a>
+  <main id="content" class="mx-auto max-w-5xl px-6 py-8 sm:py-12">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <a href="/" class="inline-flex items-center gap-3 text-sm text-gihanga-emerald hover:text-[#68fcbf]" aria-label="Back to Gihanga Console"><span class="grid h-10 w-10 place-items-center rounded-xl bg-white"><img src="${UPSKILLSAFRICA_LOGO_SVG}" alt="" class="h-8 w-8 object-contain" /></span><span>← Gihanga Console</span></a>
+      <a href="/docs#subscription" class="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#dce1fb] hover:bg-white/10">How credits work</a>
+    </header>
     <section class="mt-8 rounded-xl border border-white/10 bg-gihanga-glass p-6">
       <p class="text-sm uppercase tracking-[0.2em] text-gihanga-emerald">Upskillsafrica AI</p>
       <h1 class="mt-3 text-4xl font-black">Credits na Mobile Money</h1>
       <p class="mt-3 max-w-2xl text-[#dce1fb]">Pay through terminal or web, then use your receipt reference to check credits and model access.</p>
       <div class="mt-8 grid gap-4 md:grid-cols-2">
-        <label class="block"><span class="text-sm text-[#dce1fb]">Phone number</span><input id="phone" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="078..." /></label>
-        <label class="block"><span class="text-sm text-[#dce1fb]">Plan</span><select id="plan" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3"></select></label>
+        <label class="block"><span class="text-sm text-[#dce1fb]">Phone number</span><input id="phone" type="tel" inputmode="tel" autocomplete="tel" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="078..." aria-describedby="phoneHelp" /><span id="phoneHelp" class="mt-1 block text-xs text-gihanga-muted">Use the number that will receive the Mobile Money prompt.</span></label>
+        <label class="block"><span class="text-sm text-[#dce1fb]">Plan</span><select id="plan" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" aria-label="Credit plan"></select></label>
       </div>
-      <button id="pay" class="mt-5 rounded-md bg-gihanga-emerald px-5 py-3 font-bold text-[#003825] hover:bg-[#5af0b3] sm:w-auto">Start payment</button>
-      <pre id="paymentResult" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-[#68fcbf]"></pre>
+      <button id="pay" class="mt-5 min-h-12 rounded-md bg-gihanga-emerald px-5 py-3 font-bold text-[#003825] hover:bg-[#5af0b3] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Start payment</button>
+      <pre id="paymentResult" role="status" aria-live="polite" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-[#68fcbf]"></pre>
     </section>
     <section class="mt-6 rounded-xl border border-white/10 bg-gihanga-glass p-6">
       <h2 class="text-2xl font-bold">Check credits</h2>
-      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" class="min-w-0 flex-1 rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="receipt / transaction ref" /><button id="check" class="rounded-md bg-cyan-300 px-5 py-3 font-bold text-[#003825] hover:bg-cyan-200 sm:w-auto">Check</button></div>
-      <pre id="creditsResult" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-cyan-100"></pre>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" autocomplete="off" autocapitalize="none" spellcheck="false" class="min-w-0 flex-1 rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="receipt / transaction ref" aria-label="Receipt or transaction reference" /><button id="check" class="min-h-12 rounded-md bg-cyan-300 px-5 py-3 font-bold text-[#003825] hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Check</button></div>
+      <pre id="creditsResult" role="status" aria-live="polite" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-cyan-100"></pre>
     </section>
   </main>
   <footer class="mx-auto max-w-5xl px-6 py-8 text-sm text-slate-500">
@@ -765,16 +812,38 @@ async function loadPlans() {
     planSelect.appendChild(option);
   }
 }
-document.getElementById('pay').addEventListener('click', async () => {
+const payButton = document.getElementById('pay');
+const checkButton = document.getElementById('check');
+payButton.addEventListener('click', async () => {
   const phone = document.getElementById('phone').value.trim();
   const plan = planSelect.value;
-  const res = await fetch(API + '/terminal/pay', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone, plan }) });
-  show(paymentResult, await res.json());
+  if (!phone) { show(paymentResult, { error: 'Enter the phone number that will receive the Mobile Money prompt.' }); return; }
+  payButton.disabled = true;
+  payButton.textContent = 'Starting...';
+  try {
+    const res = await fetch(API + '/terminal/pay', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phone, plan }) });
+    show(paymentResult, await res.json());
+  } catch (error) {
+    show(paymentResult, { error: String(error) });
+  } finally {
+    payButton.disabled = false;
+    payButton.textContent = 'Start payment';
+  }
 });
-document.getElementById('check').addEventListener('click', async () => {
+checkButton.addEventListener('click', async () => {
   const receipt = document.getElementById('receipt').value.trim();
-  const res = await fetch(API + '/credits/' + encodeURIComponent(receipt));
-  show(creditsResult, await res.json());
+  if (!receipt) { show(creditsResult, { error: 'Enter a receipt or transaction reference.' }); return; }
+  checkButton.disabled = true;
+  checkButton.textContent = 'Checking...';
+  try {
+    const res = await fetch(API + '/credits/' + encodeURIComponent(receipt));
+    show(creditsResult, await res.json());
+  } catch (error) {
+    show(creditsResult, { error: String(error) });
+  } finally {
+    checkButton.disabled = false;
+    checkButton.textContent = 'Check';
+  }
 });
 loadPlans().catch(error => show(paymentResult, { error: String(error) }));
 </script>
