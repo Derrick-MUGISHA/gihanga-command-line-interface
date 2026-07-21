@@ -300,7 +300,7 @@ const SITE_NAV = `
       <span class="sr-only">Menu</span>
       <svg class="menu-icon h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     </button>
-    <nav id="primary-nav" aria-label="Primary navigation" class="mobile-nav order-3 col-span-2 hidden w-full rounded-2xl border border-white/10 bg-gradient-to-br from-[#07101f]/98 via-[#0b1629]/96 to-[#07101f]/92 p-2 text-sm text-[#dce1fb] shadow-2xl shadow-emerald-950/20 backdrop-blur-xl sm:order-none sm:col-auto sm:flex sm:w-auto sm:justify-end sm:gap-1 sm:rounded-full sm:border-white/12 sm:bg-white/7 sm:p-1.5 sm:shadow-inner sm:shadow-white/5">
+    <nav id="primary-nav" aria-label="Primary navigation" class="mobile-nav order-3 col-span-2 hidden w-full rounded-2xl border border-white/10 bg-gradient-to-br from-[#07101f]/98 via-[#0b1629]/96 to-[#07101f]/92 p-2 text-sm text-[#dce1fb] shadow-2xl shadow-emerald-950/20 backdrop-blur-xl sm:order-none sm:col-auto sm:flex sm:w-auto sm:justify-end sm:gap-1 sm:rounded-full sm:border-white/12 sm:bg-white/[0.07] sm:p-1.5 sm:shadow-inner sm:shadow-white/5">
       <a class="nav-pill hover:text-gihanga-text" href="/#install">Install</a>
       <a class="nav-pill hover:text-gihanga-text" href="/docs">Docs</a>
       <a class="nav-pill hover:text-gihanga-text" href="/credits">Credits</a>
@@ -483,9 +483,10 @@ function pageShell(title: string, description: string, body: string): string {
       if (menuIcon) menuIcon.setAttribute('d', open ? 'M6 6l12 12M18 6L6 18' : 'M4 7h16M4 12h16M4 17h16');
     };
     if (primaryNav) {
-      const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+      const normalizeNavPath = (path) => (path.replace(/\.html$/, '').replace(/\/$/, '') || '/');
+      const currentPath = normalizeNavPath(window.location.pathname);
       primaryNav.querySelectorAll('a').forEach((link) => {
-        const linkPath = new URL(link.getAttribute('href'), window.location.origin).pathname.replace(/\/$/, '') || '/';
+        const linkPath = normalizeNavPath(new URL(link.getAttribute('href'), window.location.origin).pathname);
         const isActive = currentPath === linkPath || (currentPath === '/' && link.getAttribute('href') === '/#install');
         if (isActive) link.setAttribute('aria-current', 'page');
       });
@@ -780,77 +781,38 @@ const TERMS_HTML = pageShell(
   </main>`
 );
 
-const CREDITS_HTML = `<!doctype html>
-<html lang="rw">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Upskillsafrica AI Credits</title>
-  <meta name="theme-color" content="#07111F" />
-  <link rel="icon" href="${UPSKILLSAFRICA_FAVICON_SVG}" type="image/svg+xml" />
-  <link rel="shortcut icon" href="${UPSKILLSAFRICA_FAVICON_ICO}" />
-  <link rel="apple-touch-icon" href="${UPSKILLSAFRICA_APPLE_ICON}" />
-  <link rel="manifest" href="/site.webmanifest" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Hanken Grotesk','ui-sans-serif','system-ui'],mono:['JetBrains Mono','ui-monospace']},colors:{gihanga:{bg:'#0c1324',deep:'#020617',glass:'rgba(15, 23, 42, 0.60)',emerald:'#34D399',cyan:'#22D3EE',amber:'#FBBF24',text:'#F1F5F9',muted:'#94A3B8'}}}}}</script>
-  <style>
-    html { color-scheme: dark; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-    html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
-    body { min-height: 100svh; }
-    * { box-sizing: border-box; }
-    main, section, div, footer, label, header, nav { min-width: 0; }
-    a, p, h1, h2, span, label { overflow-wrap: anywhere; }
-    input, select, button { max-width: 100%; font: inherit; touch-action: manipulation; }
-    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(52,211,153,.95); outline-offset: 3px; }
-    pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
-    pre code { white-space: pre; }
-    .skip-link { transform: translateY(-140%); transition: transform 180ms ease; }
-    .skip-link:focus { transform: translateY(0); }
-    @media (max-width: 640px) {
-      h1 { font-size: clamp(2rem, 11vw, 3rem) !important; line-height: 1.05 !important; }
-      h2 { font-size: clamp(1.4rem, 7vw, 2rem) !important; line-height: 1.12 !important; }
-      main, footer { padding-left: .875rem !important; padding-right: .875rem !important; }
-      section { padding: 1rem !important; }
-      pre { font-size: 11px !important; line-height: 1.65 !important; padding: 1rem !important; }
-      button { width: 100%; }
-    }
-    @media (max-width: 380px) {
-      main, footer { padding-left: .65rem !important; padding-right: .65rem !important; }
-    }
-  </style>
-</head>
-<body class="min-h-screen bg-gihanga-bg font-sans text-gihanga-text">
-  <a href="#content" class="skip-link fixed left-3 top-3 z-50 rounded-full bg-gihanga-emerald px-4 py-2 text-sm font-black text-[#003825]">Skip to content</a>
-  <main id="content" class="mx-auto max-w-5xl px-6 py-8 sm:py-12">
-    <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <a href="/" class="inline-flex items-center gap-3 text-sm text-gihanga-emerald hover:text-[#68fcbf]" aria-label="Back to Gihanga Console"><span class="grid h-10 w-10 place-items-center rounded-xl bg-white"><img src="${UPSKILLSAFRICA_LOGO_SVG}" alt="" class="h-8 w-8 object-contain" /></span><span>← Gihanga Console</span></a>
-      <a href="/docs#subscription" class="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#dce1fb] hover:bg-white/10">How credits work</a>
-    </header>
-    <section class="mt-8 rounded-xl border border-white/10 bg-gihanga-glass p-6">
-      <p class="text-sm uppercase tracking-[0.2em] text-gihanga-emerald">Upskillsafrica AI</p>
-      <h1 class="mt-3 text-4xl font-black">Credits na Mobile Money</h1>
-      <p class="mt-3 max-w-2xl text-[#dce1fb]">Pay through terminal or web, then use your receipt reference to check credits and model access.</p>
-      <div class="mt-8 grid gap-4 md:grid-cols-2">
-        <label class="block"><span class="text-sm text-[#dce1fb]">Phone number</span><input id="phone" type="tel" inputmode="tel" autocomplete="tel" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="078..." aria-describedby="phoneHelp" /><span id="phoneHelp" class="mt-1 block text-xs text-gihanga-muted">Use the number that will receive the Mobile Money prompt.</span></label>
-        <label class="block"><span class="text-sm text-[#dce1fb]">Plan</span><select id="plan" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" aria-label="Credit plan"></select></label>
-      </div>
-      <button id="pay" class="mt-5 min-h-12 rounded-md bg-gihanga-emerald px-5 py-3 font-bold text-[#003825] hover:bg-[#5af0b3] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Start payment</button>
-      <pre id="paymentResult" role="status" aria-live="polite" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-[#68fcbf]"></pre>
+const CREDITS_HTML = pageShell(
+	"Upskillsafrica AI Credits",
+	"Buy and check Upskillsafrica AI credits for Gihanga CLI with Mobile Money.",
+	`
+  <main id="content" data-reveal class="relative mx-auto w-[90%] max-w-[1200px] py-8">
+    <section class="rounded-2xl border border-white/10 bg-gihanga-glass p-8 backdrop-blur">
+      <p class="font-mono text-xs font-bold uppercase tracking-[0.16em] text-gihanga-emerald">Upskillsafrica AI</p>
+      <h1 class="mt-3 max-w-4xl text-4xl font-black leading-tight tracking-[-0.035em] text-gihanga-text sm:text-5xl">Credits na Mobile Money</h1>
+      <p class="mt-4 max-w-3xl text-[#dce1fb]">Pay through terminal or web, then use your receipt reference to check credits and model access.</p>
+      <a href="/docs#subscription" class="mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-[#dce1fb] hover:bg-white/10">How credits work</a>
     </section>
-    <section class="mt-6 rounded-xl border border-white/10 bg-gihanga-glass p-6">
-      <h2 class="text-2xl font-bold">Check credits</h2>
-      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" autocomplete="off" autocapitalize="none" spellcheck="false" class="min-w-0 flex-1 rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="receipt / transaction ref" aria-label="Receipt or transaction reference" /><button id="check" class="min-h-12 rounded-md bg-cyan-300 px-5 py-3 font-bold text-[#003825] hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Check</button></div>
-      <pre id="creditsResult" role="status" aria-live="polite" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-cyan-100"></pre>
+
+    <section data-reveal class="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <article class="rounded-xl border border-emerald-400/20 bg-gihanga-emerald/10 p-6">
+        <h2 class="text-2xl font-bold text-gihanga-text">Start payment</h2>
+        <p class="mt-2 text-[#dce1fb]">Choose a plan, enter the phone number that will receive the Mobile Money prompt, then confirm on your phone.</p>
+        <div class="mt-6 grid gap-4 md:grid-cols-2">
+          <label class="block"><span class="text-sm text-[#dce1fb]">Phone number</span><input id="phone" type="tel" inputmode="tel" autocomplete="tel" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="078..." aria-describedby="phoneHelp" /><span id="phoneHelp" class="mt-1 block text-xs text-gihanga-muted">Use the number that will receive the Mobile Money prompt.</span></label>
+          <label class="block"><span class="text-sm text-[#dce1fb]">Plan</span><select id="plan" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" aria-label="Credit plan"></select></label>
+        </div>
+        <button id="pay" class="mt-5 min-h-12 rounded-md bg-gihanga-emerald px-5 py-3 font-bold text-[#003825] hover:bg-[#5af0b3] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Start payment</button>
+        <pre id="paymentResult" role="status" aria-live="polite" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-[#68fcbf]"></pre>
+      </article>
+
+      <article class="rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-6">
+        <h2 class="text-2xl font-bold text-gihanga-text">Check credits</h2>
+        <p class="mt-2 text-[#dce1fb]">Paste your receipt or transaction reference to confirm credit status.</p>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row"><input id="receipt" autocomplete="off" autocapitalize="none" spellcheck="false" class="min-w-0 flex-1 rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="receipt / transaction ref" aria-label="Receipt or transaction reference" /><button id="check" class="min-h-12 rounded-md bg-cyan-300 px-5 py-3 font-bold text-[#003825] hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Check</button></div>
+        <pre id="creditsResult" role="status" aria-live="polite" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-cyan-100"></pre>
+      </article>
     </section>
   </main>
-  <footer class="mx-auto max-w-5xl px-6 py-8 text-sm text-slate-500">
-    <div class="border-t border-white/10 pt-6">
-      <a class="text-gihanga-emerald hover:text-[#68fcbf]" href="https://upskillsafrica.org" rel="noopener noreferrer">Powered by Upskillsafrica Foundation</a>
-    </div>
-  </footer>
 <script>
 const API = '/api';
 const planSelect = document.getElementById('plan');
@@ -858,13 +820,16 @@ const paymentResult = document.getElementById('paymentResult');
 const creditsResult = document.getElementById('creditsResult');
 function show(el, value) { el.textContent = JSON.stringify(value, null, 2); }
 async function loadPlans() {
-  const data = await fetch(API + '/plans').then(r => r.json());
+  const res = await fetch(API + '/plans');
+  const data = await res.json();
+  planSelect.innerHTML = '';
   for (const plan of data.plans || []) {
     const option = document.createElement('option');
     option.value = plan.id;
     option.textContent = plan.id + ' - ' + plan.amountRwf + ' RWF';
     planSelect.appendChild(option);
   }
+  if (!planSelect.value) show(paymentResult, { error: 'No credit plans are available right now. Try again shortly.' });
 }
 const payButton = document.getElementById('pay');
 const checkButton = document.getElementById('check');
@@ -872,6 +837,7 @@ payButton.addEventListener('click', async () => {
   const phone = document.getElementById('phone').value.trim();
   const plan = planSelect.value;
   if (!phone) { show(paymentResult, { error: 'Enter the phone number that will receive the Mobile Money prompt.' }); return; }
+  if (!plan) { show(paymentResult, { error: 'Choose a credit plan first.' }); return; }
   payButton.disabled = true;
   payButton.textContent = 'Starting...';
   try {
@@ -900,9 +866,8 @@ checkButton.addEventListener('click', async () => {
   }
 });
 loadPlans().catch(error => show(paymentResult, { error: String(error) }));
-</script>
-</body>
-</html>`;
+</script>`
+);
 
 function withHeaders(body: BodyInit, init: ResponseInit = {}): Response {
 	const headers = new Headers(init.headers);
