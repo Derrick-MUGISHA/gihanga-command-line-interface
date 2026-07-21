@@ -285,17 +285,17 @@ Write-Host "Run: gihanga --help"
 
 
 const SITE_NAV = `
-  <header class="relative mx-auto flex w-[90%] max-w-[1200px] items-center justify-between px-0 py-5">
-    <a href="/" class="flex items-center gap-3">
-      <span class="grid h-12 w-12 place-items-center rounded-xl border border-white/10 bg-white shadow-glow">
-        <img src="${UPSKILLSAFRICA_LOGO_SVG}" alt="UpskillsAfrica Foundation" class="h-9 w-9 object-contain" loading="eager" decoding="async" />
+  <header class="relative mx-auto flex w-[90%] max-w-[1200px] flex-wrap items-center justify-between gap-3 px-0 py-4 sm:py-5">
+    <a href="/" class="flex min-w-0 items-center gap-3">
+      <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white shadow-glow sm:h-12 sm:w-12">
+        <img src="${UPSKILLSAFRICA_LOGO_SVG}" alt="UpskillsAfrica Foundation" class="h-8 w-8 object-contain sm:h-9 sm:w-9" loading="eager" decoding="async" />
       </span>
-      <div>
-        <p class="text-lg font-black tracking-tight">Gihanga CLI <span class="ml-2 rounded-md border border-gihanga-emerald/30 bg-gihanga-emerald/10 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-gihanga-emerald">Alpha</span></p>
-        <p class="text-xs text-gihanga-muted">Kinyarwanda-first terminal AI · v0.1.0-alpha.3</p>
+      <div class="min-w-0">
+        <p class="truncate text-base font-black tracking-tight sm:text-lg">Gihanga CLI <span class="ml-1 rounded-md border border-gihanga-emerald/30 bg-gihanga-emerald/10 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.1em] text-gihanga-emerald sm:ml-2 sm:px-2 sm:py-1 sm:text-[10px]">Alpha</span></p>
+        <p class="hidden text-xs text-gihanga-muted sm:block">Kinyarwanda-first terminal AI · v0.1.0-alpha.3</p>
       </div>
     </a>
-    <nav class="hidden items-center gap-5 text-sm text-[#dce1fb] md:flex">
+    <nav class="order-3 flex w-full items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-[#dce1fb] backdrop-blur sm:order-none sm:w-auto sm:justify-end sm:gap-5 sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm">
       <a class="hover:text-gihanga-text" href="/#install">Install</a>
       <a class="hover:text-gihanga-text" href="/docs">Docs</a>
       <a class="hover:text-gihanga-text" href="/privacy">Privacy</a>
@@ -360,12 +360,26 @@ function pageShell(title: string, description: string, body: string): string {
     };
   </script>
   <style>
+    html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
     body { background: #0c1324; }
+    * { box-sizing: border-box; }
+    img, svg { max-width: 100%; }
+    pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
+    :not(pre) > code { overflow-wrap: anywhere; }
     .neo-grid { background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0); background-size: 32px 32px; }
     [data-reveal] { opacity: 0; transform: translateY(22px); transition: opacity 700ms ease, transform 700ms ease; }
     [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
     [data-reveal="terminal"] { transform: translateY(14px) scale(.985); }
     [data-reveal="terminal"].is-visible { transform: translateY(0) scale(1); }
+    @media (max-width: 640px) {
+      .w-\[90\%\] { width: calc(100% - 1.25rem) !important; }
+      h1 { font-size: clamp(2.35rem, 13vw, 3.75rem) !important; line-height: .98 !important; letter-spacing: -0.045em !important; }
+      h2 { font-size: clamp(1.7rem, 8vw, 2.35rem) !important; line-height: 1.08 !important; }
+      pre { font-size: 11px !important; line-height: 1.65 !important; padding: 1rem !important; border-radius: .95rem !important; }
+      article, section { scroll-margin-top: 1rem; }
+      .mobile-pad { padding: 1rem !important; }
+      .mobile-terminal { border-radius: 1.25rem !important; }
+    }
     @media (prefers-reduced-motion: reduce) { [data-reveal] { opacity: 1; transform: none; transition: none; } }
   </style>
 </head>
@@ -404,7 +418,7 @@ const HOME_HTML = pageShell(
 	"Install Gihanga CLI, a Kinyarwanda-first terminal AI coding assistant powered by Upskillsafrica.",
 	`
   <main class="relative">
-    <section class="mx-auto grid w-[90%] max-w-[1200px] items-center gap-8 py-10 lg:grid-cols-[1.03fr_0.97fr] lg:py-16">
+    <section class="mx-auto grid w-[90%] max-w-[1200px] items-center gap-8 py-6 sm:py-10 lg:grid-cols-[1.03fr_0.97fr] lg:py-16">
       <div data-reveal>
         <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-gihanga-emerald/25 bg-gihanga-emerald/10 px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-gihanga-emerald">
           <span class="h-2 w-2 rounded-full bg-gihanga-emerald shadow-glow"></span>
@@ -413,7 +427,7 @@ const HOME_HTML = pageShell(
         <h1 class="max-w-4xl text-5xl font-black leading-[0.94] tracking-[-0.055em] text-gihanga-text sm:text-6xl lg:text-7xl">
           AI coding muri terminal, Kinyarwanda-first.
         </h1>
-        <p class="mt-6 max-w-2xl text-lg leading-8 text-[#dce1fb]">
+        <p class="mt-5 max-w-2xl text-base leading-7 text-[#dce1fb] sm:mt-6 sm:text-lg sm:leading-8">
           Install Gihanga CLI, injira muri Upskillsafrica, wishyure credits na Mobile Money, ukoreshe models muri terminal yawe. Commands nka <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">/kwinjira</code>, <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">/ubumenyi</code>, na <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">/sohoka</code> ziri local-workflow friendly.
         </p>
         <div class="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -428,14 +442,14 @@ const HOME_HTML = pageShell(
         </div>
       </div>
 
-      <div data-reveal="terminal" class="relative">
-        <div class="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-gihanga-emerald/25 via-gihanga-cyan/10 to-gihanga-amber/15 blur-xl"></div>
-        <div class="relative overflow-hidden rounded-[2rem] border border-white/12 bg-[#07101f]/95 shadow-2xl shadow-emerald-950/30 backdrop-blur">
+      <div data-reveal="terminal" class="relative min-w-0">
+        <div class="absolute -inset-2 rounded-[1.5rem] bg-gradient-to-br from-gihanga-emerald/25 via-gihanga-cyan/10 to-gihanga-amber/15 blur-xl sm:-inset-3 sm:rounded-[2rem]"></div>
+        <div class="mobile-terminal relative min-w-0 overflow-hidden rounded-[1.5rem] border border-white/12 bg-[#07101f]/95 shadow-2xl shadow-emerald-950/30 backdrop-blur sm:rounded-[2rem]">
           <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div class="flex items-center gap-2"><span class="h-3 w-3 rounded-full bg-red-400"></span><span class="h-3 w-3 rounded-full bg-gihanga-amber"></span><span class="h-3 w-3 rounded-full bg-gihanga-emerald"></span><span class="ml-2 font-mono text-xs text-gihanga-muted">gihanga-terminal</span></div>
             <span class="rounded-full border border-gihanga-emerald/20 bg-gihanga-emerald/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-gihanga-emerald">online</span>
           </div>
-          <pre class="max-h-[590px] overflow-x-auto p-5 font-mono text-[13px] leading-7 text-slate-200 sm:p-7"><code>$ curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+          <pre class="max-h-[520px] overflow-x-auto p-4 font-mono text-[11px] leading-6 text-slate-200 sm:max-h-[590px] sm:p-7 sm:text-[13px] sm:leading-7"><code>$ curl -fsSL https://console.upskillsafrica.org/install.sh | bash
 Kwinjiza Gihanga...
 Gutegura amapakeji...
 Kubaka Gihanga...
@@ -469,13 +483,13 @@ $ gihanga
         <a href="/docs#subscription" class="text-sm font-semibold text-gihanga-emerald hover:text-[#68fcbf]">Reba subscription flow →</a>
       </div>
       <div class="grid gap-5 lg:grid-cols-2">
-        <article class="rounded-2xl border border-cyan-400/20 bg-gihanga-glass p-6 backdrop-blur">
+        <article class="mobile-pad rounded-2xl border border-cyan-400/20 bg-gihanga-glass p-6 backdrop-blur">
           <div class="mb-4 flex items-center justify-between gap-3"><div class="flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-cyan-400/15 text-[#a2eeff]"><i data-lucide="monitor" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">🐧 🍎 Linux / macOS</h3><p class="text-sm text-gihanga-muted">Bash installer</p></div></div></div>
-          <div class="relative"><pre class="font-mono overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 pr-20 text-sm text-[#68fcbf]"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre></div>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:pr-20 sm:text-sm"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre></div>
         </article>
-        <article class="rounded-2xl border border-blue-400/20 bg-gihanga-glass p-6 backdrop-blur">
+        <article class="mobile-pad rounded-2xl border border-blue-400/20 bg-gihanga-glass p-6 backdrop-blur">
           <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-blue-400/15 text-blue-200"><i data-lucide="panel-top" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">🪟 Windows PowerShell</h3><p class="text-sm text-gihanga-muted">Native Windows installer</p></div></div>
-          <pre class="font-mono overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
+          <pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:text-sm"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre>
         </article>
       </div>
     </section>
@@ -675,9 +689,21 @@ const CREDITS_HTML = `<!doctype html>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Hanken Grotesk','ui-sans-serif','system-ui'],mono:['JetBrains Mono','ui-monospace']},colors:{gihanga:{bg:'#0c1324',deep:'#020617',glass:'rgba(15, 23, 42, 0.60)',emerald:'#34D399',cyan:'#22D3EE',amber:'#FBBF24',text:'#F1F5F9',muted:'#94A3B8'}}}}}</script>
+  <style>
+    html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+    * { box-sizing: border-box; }
+    pre { max-width: 100%; -webkit-overflow-scrolling: touch; }
+    @media (max-width: 640px) {
+      h1 { font-size: clamp(2rem, 11vw, 3rem) !important; line-height: 1.05 !important; }
+      main, footer { padding-left: .875rem !important; padding-right: .875rem !important; }
+      section { padding: 1rem !important; }
+      pre { font-size: 11px !important; line-height: 1.65 !important; padding: 1rem !important; }
+      button { width: 100%; }
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-gihanga-bg font-sans text-gihanga-text">
-  <main class="mx-auto max-w-5xl px-6 py-12">
+  <main class="mx-auto max-w-5xl px-6 py-8 sm:py-12">
     <a href="/" class="text-sm text-gihanga-emerald hover:text-[#68fcbf]">← Gihanga Console</a>
     <section class="mt-8 rounded-xl border border-white/10 bg-gihanga-glass p-6">
       <p class="text-sm uppercase tracking-[0.2em] text-gihanga-emerald">Upskillsafrica AI</p>
@@ -687,12 +713,12 @@ const CREDITS_HTML = `<!doctype html>
         <label class="block"><span class="text-sm text-[#dce1fb]">Phone number</span><input id="phone" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="078..." /></label>
         <label class="block"><span class="text-sm text-[#dce1fb]">Plan</span><select id="plan" class="mt-2 w-full rounded-md border border-white/15 bg-gihanga-deep px-4 py-3"></select></label>
       </div>
-      <button id="pay" class="mt-5 rounded-md bg-gihanga-emerald px-5 py-3 font-bold text-[#003825] hover:bg-[#5af0b3]">Start payment</button>
+      <button id="pay" class="mt-5 rounded-md bg-gihanga-emerald px-5 py-3 font-bold text-[#003825] hover:bg-[#5af0b3] sm:w-auto">Start payment</button>
       <pre id="paymentResult" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-[#68fcbf]"></pre>
     </section>
     <section class="mt-6 rounded-xl border border-white/10 bg-gihanga-glass p-6">
       <h2 class="text-2xl font-bold">Check credits</h2>
-      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" class="flex-1 rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="receipt / transaction ref" /><button id="check" class="rounded-md bg-cyan-300 px-5 py-3 font-bold text-[#003825] hover:bg-cyan-200">Check</button></div>
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row"><input id="receipt" class="min-w-0 flex-1 rounded-md border border-white/15 bg-gihanga-deep px-4 py-3" placeholder="receipt / transaction ref" /><button id="check" class="rounded-md bg-cyan-300 px-5 py-3 font-bold text-[#003825] hover:bg-cyan-200 sm:w-auto">Check</button></div>
       <pre id="creditsResult" class="mt-5 overflow-x-auto rounded-md bg-gihanga-deep p-4 text-sm text-cyan-100"></pre>
     </section>
   </main>
