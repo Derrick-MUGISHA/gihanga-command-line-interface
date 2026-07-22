@@ -588,6 +588,25 @@ $ gihanga
           <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] text-[#68fcbf] sm:text-sm"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div>
         </article>
       </div>
+      <div class="mt-5 grid gap-5 lg:grid-cols-2">
+        <article class="mobile-pad rounded-2xl border border-emerald-400/20 bg-gihanga-emerald/10 p-6 backdrop-blur">
+          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-400/15 text-gihanga-emerald"><i data-lucide="apple" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">macOS dedicated steps</h3><p class="text-sm text-gihanga-muted">For zsh Terminal on Mac.</p></div></div>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] leading-6 text-[#68fcbf] sm:text-sm"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+hash -r
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+gihanga --help</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash&#10;hash -r&#10;export PATH=&quot;$HOME/.local/bin:$PATH&quot;&#10;gihanga --help" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy macOS steps</button></div>
+          <p class="mt-4 text-sm text-[#dce1fb]">If <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">gihanga</code> works only after export, make it permanent with: <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">echo 'export PATH=&quot;$HOME/.local/bin:$PATH&quot;' &gt;&gt; ~/.zshrc</code>, then open a new Terminal tab.</p>
+        </article>
+        <article class="mobile-pad rounded-2xl border border-amber-400/20 bg-gihanga-amber/10 p-6 backdrop-blur">
+          <div class="mb-4 flex items-center gap-3"><span class="grid h-12 w-12 place-items-center rounded-xl bg-amber-400/15 text-gihanga-amber"><i data-lucide="smartphone" class="h-6 w-6"></i></span><div><h3 class="text-xl font-bold text-gihanga-text">Android Termux</h3><p class="text-sm text-gihanga-muted">Install inside Termux terminal.</p></div></div>
+          <div class="relative min-w-0"><pre class="overflow-x-auto rounded-xl border border-white/10 bg-gihanga-deep p-4 font-mono text-[11px] leading-6 text-[#68fcbf] sm:text-sm"><code>pkg update -y
+pkg install -y git nodejs
+curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+hash -r
+gihanga --help</code></pre><button type="button" data-copy="pkg update -y&#10;pkg install -y git nodejs&#10;curl -fsSL https://console.upskillsafrica.org/install.sh | bash&#10;hash -r&#10;gihanga --help" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy Termux steps</button></div>
+          <p class="mt-4 text-sm text-[#dce1fb]">Use the current Termux app from F-Droid/GitHub. If npm global linking is not writable, the installer falls back to a user path and tells you what to add to PATH.</p>
+        </article>
+      </div>
     </section>
 
     <section data-reveal class="mx-auto grid w-[90%] max-w-[1200px] gap-5 py-10 lg:grid-cols-3">
@@ -650,6 +669,15 @@ const DOCS_HTML = pageShell(
           <div class="mt-5 grid gap-4 lg:grid-cols-2">
             <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Linux / macOS</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div><div class="mt-3 rounded-lg border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm text-[#dce1fb]"><strong class="text-gihanga-text">macOS:</strong> after install, open a new Terminal tab or run <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">hash -r</code>. If the command is still missing, run <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">export PATH=&quot;$HOME/.local/bin:$PATH&quot;</code> and add it to <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-gihanga-emerald">~/.zshrc</code>.</div></div>
             <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Windows PowerShell</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex</code></pre><button type="button" data-copy="iwr https://console.upskillsafrica.org/install.ps1 -UseB | iex" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy command</button></div></div>
+            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">macOS dedicated</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+hash -r
+export PATH=&quot;$HOME/.local/bin:$PATH&quot;
+gihanga --help</code></pre><button type="button" data-copy="curl -fsSL https://console.upskillsafrica.org/install.sh | bash&#10;hash -r&#10;export PATH=&quot;$HOME/.local/bin:$PATH&quot;&#10;gihanga --help" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy macOS steps</button></div></div>
+            <div><p class="mb-2 text-sm font-semibold text-[#dce1fb]">Android Termux</p><div class="relative min-w-0"><pre class="font-mono overflow-x-auto rounded-lg bg-gihanga-deep p-4 text-sm text-[#68fcbf]"><code>pkg update -y
+pkg install -y git nodejs
+curl -fsSL https://console.upskillsafrica.org/install.sh | bash
+hash -r
+gihanga --help</code></pre><button type="button" data-copy="pkg update -y&#10;pkg install -y git nodejs&#10;curl -fsSL https://console.upskillsafrica.org/install.sh | bash&#10;hash -r&#10;gihanga --help" class="copy-button mt-3 inline-flex items-center justify-center rounded-lg px-4 py-2 font-mono text-xs font-bold">Copy Termux steps</button></div><p class="mt-3 text-sm text-[#dce1fb]">Use the current Termux app from F-Droid/GitHub, then run these commands inside Termux.</p></div>
           </div>
           <p class="mt-4 text-[#dce1fb]">Installer ikora clone/update, install/build/link quietly, hanyuma ishyira Gihanga ubumenyi, scripts, data, na model catalog muri <code>~/.gihanga/agent</code>.</p>
         </article>
