@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ENV_AGENT_DIR } from "../src/config.ts";
+import { CONFIG_DIR_NAME, ENV_AGENT_DIR } from "../src/config.ts";
 
 const cliPath = resolve(__dirname, "../src/cli.ts");
 
@@ -25,7 +25,7 @@ async function runCli(args: string[]): Promise<{ stdout: string; stderr: string;
 	const tempRoot = createTempDir();
 	const agentDir = join(tempRoot, "agent");
 	const projectDir = join(tempRoot, "project");
-	const projectConfigDir = join(projectDir, ".pi");
+	const projectConfigDir = join(projectDir, CONFIG_DIR_NAME);
 	mkdirSync(agentDir, { recursive: true });
 	mkdirSync(projectConfigDir, { recursive: true });
 
@@ -92,8 +92,8 @@ describe("stdout cleanliness in non-interactive modes", () => {
 		const result = await runCli(["--help"]);
 
 		expect(result.code).toBe(0);
-		expect(result.stdout).toContain("Usage:");
-		expect(result.stderr).not.toContain("Usage:");
+		expect(result.stdout).toContain("Imikoreshereze:");
+		expect(result.stderr).not.toContain("Imikoreshereze:");
 	});
 
 	it("keeps stdout empty for --mode json --help while routing trusted startup chatter to stderr", async () => {
@@ -103,7 +103,7 @@ describe("stdout cleanliness in non-interactive modes", () => {
 		expect(result.stdout).toBe("");
 		expect(result.stderr).toContain("changed 1 package in 471ms");
 		expect(result.stderr).toContain("found 0 vulnerabilities");
-		expect(result.stderr).toContain("Usage:");
+		expect(result.stderr).toContain("Imikoreshereze:");
 	});
 
 	it("keeps stdout empty for -p --help while routing trusted startup chatter to stderr", async () => {
@@ -113,7 +113,7 @@ describe("stdout cleanliness in non-interactive modes", () => {
 		expect(result.stdout).toBe("");
 		expect(result.stderr).toContain("changed 1 package in 471ms");
 		expect(result.stderr).toContain("found 0 vulnerabilities");
-		expect(result.stderr).toContain("Usage:");
+		expect(result.stderr).toContain("Imikoreshereze:");
 	});
 
 	it("ignores untrusted project package installs for help", async () => {
@@ -123,6 +123,6 @@ describe("stdout cleanliness in non-interactive modes", () => {
 		expect(result.stdout).toBe("");
 		expect(result.stderr).not.toContain("changed 1 package in 471ms");
 		expect(result.stderr).not.toContain("found 0 vulnerabilities");
-		expect(result.stderr).toContain("Usage:");
+		expect(result.stderr).toContain("Imikoreshereze:");
 	});
 });

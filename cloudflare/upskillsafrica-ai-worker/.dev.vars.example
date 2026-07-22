@@ -8,6 +8,8 @@ AZURE_OPENAI_API_VERSION="2024-10-21"
 AZURE_OPENAI_DEPLOYMENT="gpt-4o-mini"
 
 OPENROUTER_API_KEY="YOUR_OPENROUTER_KEY"
+NVIDIA_API_KEY="YOUR_NVIDIA_API_KEY"
+NVIDIA_API_ENDPOINT="https://integrate.api.nvidia.com/v1"
 
 SUBSCRIPTION_AMOUNT_RWF="5000"
 MONTHLY_SUBSCRIPTION_AMOUNT_RWF="53000"
@@ -16,4 +18,5 @@ MONTHLY_GPT5_HOURS_PER_DAY="5"
 
 # JSON arrays. Azure is premium/expensive; OpenRouter defaults are free models.
 UPSKILLS_AZURE_MODELS='[{"id":"azure_models/gpt-5","name":"Azure gpt-5 (premium)","deployment":"gpt-5","model":"gpt-5","version":"2025-08-07","status":"Succeeded","deploymentType":"Global Standard","priceTier":"premium"},{"id":"azure_models/o3","name":"Azure o3 (premium reasoning)","deployment":"o3","model":"o3","version":"2025-04-16","status":"Succeeded","deploymentType":"Global Standard","priceTier":"premium"},{"id":"azure_models/gpt-4o-mini","name":"Azure gpt-4o-mini (premium low-cost)","deployment":"gpt-4o-mini","model":"gpt-4o-mini","version":"2024-07-18","status":"Succeeded","deploymentType":"Global Standard","priceTier":"premium"}]'
+UPSKILLS_NVIDIA_MODELS='[{"id":"uaf_model_three_best","name":"uaf_model_three_best (NVIDIA Nemotron 3 Ultra)","model":"nvidia/nemotron-3-ultra-550b-a55b","status":"Succeeded","deploymentType":"NVIDIA API","priceTier":"premium","capabilities":["chat","code","reasoning"],"contextWindow":1000000,"maxTokens":32768}]'
 UPSKILLS_OPENROUTER_MODELS='[{"id":"openrouter/free","name":"OpenRouter Free Models Router","priceTier":"free"},{"id":"openrouter/openai/gpt-oss-120b:free","name":"OpenAI GPT OSS 120B (free)","priceTier":"free"},{"id":"openrouter/qwen/qwen3-next-80b-a3b-instruct:free","name":"Qwen3 Next 80B A3B Instruct (free)","priceTier":"free"},{"id":"openrouter/google/gemma-4-26b-a4b-it:free","name":"Google Gemma 4 26B A4B IT (free)","priceTier":"free"}]'

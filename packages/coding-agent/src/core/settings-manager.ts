@@ -1,7 +1,7 @@
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Transport } from "@earendil-works/pi-ai";
 import { randomUUID } from "crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import lockfile from "proper-lockfile";
 import { CONFIG_DIR_NAME, getAgentDir } from "../config.ts";
@@ -242,7 +242,17 @@ export class FileSettingsStorage implements SettingsStorage {
 					mkdirSync(dir, { recursive: true });
 				}
 				if (!release) {
+					// proper-lockfile locks existing paths. Touch the file without
+					// truncating it before acquiring the first lock so fresh project
+					// settings can be initialized safely under concurrent writers.
+					closeSync(openSync(path, "a"));
 					release = this.acquireLockSyncWithRetry(path);
+					const lockedCurrent = readFileSync(path, "utf-8");
+					const lockedNext = fn(lockedCurrent);
+					if (lockedNext !== undefined) {
+						writeFileSync(path, lockedNext, "utf-8");
+					}
+					return;
 				}
 				writeFileSync(path, next, "utf-8");
 			}

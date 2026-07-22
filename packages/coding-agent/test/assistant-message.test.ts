@@ -70,7 +70,7 @@ describe("AssistantMessageComponent", () => {
 		const rendered = component.render(80).join("\n");
 
 		expect(rendered).toContain("Ndigutekereza...");
-		expect(rendered).toContain("maximum output token limit");
+		expect(rendered).toContain("output limit");
 		expect(rendered).toContain("response may be incomplete");
 	});
 

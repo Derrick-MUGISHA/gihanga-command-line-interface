@@ -2,7 +2,7 @@ import { neon } from "@neondatabase/serverless";
 
 type JsonObject = Record<string, unknown>;
 
-type ModelSource = "azure_models" | "openrouter";
+type ModelSource = "azure_models" | "openrouter" | "nvidia";
 type PriceTier = "premium" | "free";
 type PlanId = "thirty_minutes" | "hourly" | "twelve_days" | "monthly";
 
@@ -27,6 +27,7 @@ interface Env {
 	AZURE_AI_PROJECT_ENDPOINT?: string;
 	UPSKILLS_AZURE_MODELS?: string;
 	UPSKILLS_OPENROUTER_MODELS?: string;
+	UPSKILLS_NVIDIA_MODELS?: string;
 	AZURE_OPENAI_ENDPOINT?: string;
 	AZURE_OPENAI_API_KEY?: string;
 	ORG_AZURE_OPENAI_ENDPOINT?: string;
@@ -36,6 +37,8 @@ interface Env {
 	AZURE_OPENAI_API_VERSION?: string;
 	AZURE_OPENAI_DEPLOYMENT?: string;
 	OPENROUTER_API_KEY?: string;
+	NVIDIA_API_KEY?: string;
+	NVIDIA_API_ENDPOINT?: string;
 	TEST_PAYMENT_BYPASS_PHONE?: string;
 }
 
@@ -45,6 +48,11 @@ type NeonQuery = (strings: TemplateStringsArray, ...values: unknown[]) => Promis
 interface AuthUser {
 	id: string;
 	email: string;
+}
+
+interface AuthenticatedAccess {
+	user: AuthUser;
+	entitlement?: AccountEntitlementRecord;
 }
 
 interface AccountEntitlementRecord {
@@ -63,6 +71,8 @@ interface ManagedModel {
 	source: ModelSource;
 	priceTier: PriceTier;
 	capabilities: string[];
+	contextWindow?: number;
+	maxTokens?: number;
 	deployment?: string;
 	model?: string;
 	version?: string;
@@ -102,7 +112,21 @@ interface EntitlementRecord {
 interface DailyUsageRecord {
 	date: string;
 	gpt5Ms: number;
+	modelRequests: Record<string, number>;
 	updatedAt: string;
+}
+
+interface ModelUsagePolicy {
+	defaultMaxTokens: number;
+	hardMaxTokens: number;
+	dailyRequests: Record<PlanId, number>;
+}
+
+interface ModelQuotaResult {
+	trackGpt5: boolean;
+	trackModelRequests: boolean;
+	limited?: boolean;
+	message?: string;
 }
 
 const DEFAULT_HOURLY_AMOUNT_RWF = 5000;
@@ -117,6 +141,22 @@ const DEFAULT_ORG_AZURE_ENDPOINT = "https://rask-resource.services.ai.azure.com/
 const DEFAULT_ORG_AZURE_PROJECT_ENDPOINT = "https://rask-resource.services.ai.azure.com/api/projects/rask";
 const DEFAULT_AZURE_DEPLOYMENT = "gpt-4o-mini";
 const ORG_REQUIRED_MODEL_IDS = new Set(["UAF_model_one", "uaf_model_two_alpha", "gpt-realtime-2.1", "gpt-5.6-luna", "gpt-5.5"]);
+const DEFAULT_NVIDIA_API_ENDPOINT = "https://integrate.api.nvidia.com/v1";
+const STANDARD_PREMIUM_POLICY: ModelUsagePolicy = {
+	defaultMaxTokens: 2048,
+	hardMaxTokens: 4096,
+	dailyRequests: { thirty_minutes: 40, hourly: 80, twelve_days: 160, monthly: 300 },
+};
+const REASONING_PREMIUM_POLICY: ModelUsagePolicy = {
+	defaultMaxTokens: 2048,
+	hardMaxTokens: 4096,
+	dailyRequests: { thirty_minutes: 6, hourly: 12, twelve_days: 20, monthly: 40 },
+};
+const NVIDIA_ULTRA_POLICY: ModelUsagePolicy = {
+	defaultMaxTokens: 1024,
+	hardMaxTokens: 4096,
+	dailyRequests: { thirty_minutes: 4, hourly: 8, twelve_days: 12, monthly: 25 },
+};
 
 const DEFAULT_AZURE_MODELS: ManagedModel[] = [
 	{
@@ -211,7 +251,7 @@ const DEFAULT_AZURE_MODELS: ManagedModel[] = [
 const DEFAULT_OPENROUTER_FREE_MODELS: ManagedModel[] = [];
 
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		if (request.method === "OPTIONS") {
 			return new Response(null, { headers: corsHeaders() });
 		}
@@ -261,7 +301,7 @@ export default {
 				return await handleCredits(url.pathname.split("/").pop() || "", env);
 			}
 			if (url.pathname === "/v1/chat/completions" && request.method === "POST") {
-				return await handleChatCompletions(request, env);
+				return await handleChatCompletions(request, env, ctx);
 			}
 			return json({ message: "Not Found" }, 404);
 		} catch (error) {
@@ -284,6 +324,13 @@ function corsHeaders(): HeadersInit {
 
 function json(data: JsonObject, status = 200): Response {
 	return Response.json(data, { status, headers: corsHeaders() });
+}
+
+function cachedJson(data: JsonObject, maxAgeSeconds: number, status = 200): Response {
+	return Response.json(data, {
+		status,
+		headers: { ...corsHeaders(), "Cache-Control": `public, max-age=${maxAgeSeconds}` },
+	});
 }
 
 function openAiError(message: string, status: number, code = "upskillsafrica_error"): Response {
@@ -456,6 +503,11 @@ function parseModelList(raw: string | undefined, source: ModelSource): ManagedMo
 			const deploymentType = readString(item.deploymentType);
 			const priceTier = readString(item.priceTier) === "premium" ? "premium" : "free";
 			const requiresOrgCode = item.requiresOrgCode === true;
+			const contextWindow = typeof item.contextWindow === "number" && item.contextWindow > 0 ? item.contextWindow : undefined;
+			const maxTokens = typeof item.maxTokens === "number" && item.maxTokens > 0 ? item.maxTokens : undefined;
+			const capabilities = Array.isArray(item.capabilities)
+				? item.capabilities.filter((capability): capability is string => typeof capability === "string" && capability.trim().length > 0)
+				: ["chat", "code"];
 			if (!id || !name) return [];
 			return [
 				{
@@ -469,7 +521,9 @@ function parseModelList(raw: string | undefined, source: ModelSource): ManagedMo
 					deploymentType,
 					priceTier,
 					requiresOrgCode,
-					capabilities: ["chat", "code"],
+					contextWindow,
+					maxTokens,
+					capabilities: capabilities.length > 0 ? capabilities : ["chat", "code"],
 				},
 			];
 		});
@@ -481,9 +535,11 @@ function parseModelList(raw: string | undefined, source: ModelSource): ManagedMo
 function getConfiguredModels(env: Env): ManagedModel[] {
 	const azureModels = parseModelList(env.UPSKILLS_AZURE_MODELS, "azure_models");
 	const openRouterModels = parseModelList(env.UPSKILLS_OPENROUTER_MODELS, "openrouter");
+	const nvidiaModels = parseModelList(env.UPSKILLS_NVIDIA_MODELS, "nvidia");
 	return [
 		...(openRouterModels.length > 0 ? openRouterModels : DEFAULT_OPENROUTER_FREE_MODELS),
 		...(azureModels.length > 0 ? azureModels.map((model) => ({ ...model, priceTier: "premium" as const })) : DEFAULT_AZURE_MODELS),
+		...nvidiaModels.map((model) => ({ ...model, priceTier: "premium" as const })),
 	];
 }
 
@@ -540,20 +596,27 @@ async function getModels(env: Env): Promise<ManagedModel[]> {
 }
 
 function handlePlans(env: Env): Response {
-	return json({ currency: "RWF", plans: getPlans(env) });
+	return cachedJson({ currency: "RWF", plans: getPlans(env) }, 300);
 }
 
 async function handleModels(env: Env): Promise<Response> {
 	const models = await getModels(env);
-	return json({
-		provider: "Upskillsafrica AI",
-		azureProjectEndpoint: env.AZURE_AI_PROJECT_ENDPOINT || DEFAULT_AZURE_PROJECT_ENDPOINT,
-		models,
-		groups: {
-			openrouterFree: models.filter((model) => model.source === "openrouter" && model.priceTier === "free"),
-			azurePremium: models.filter((model) => model.source === "azure_models"),
+	return cachedJson(
+		{
+			provider: "Upskillsafrica AI",
+			azureProjectEndpoint: env.AZURE_AI_PROJECT_ENDPOINT || DEFAULT_AZURE_PROJECT_ENDPOINT,
+			models: models.map((model) => ({
+				...model,
+				contextWindow: model.contextWindow ?? 128000,
+				maxTokens: model.maxTokens ?? getModelUsagePolicy(model)?.hardMaxTokens ?? 16384,
+			})),
+			groups: {
+				openrouterFree: models.filter((model) => model.source === "openrouter" && model.priceTier === "free"),
+				azurePremium: models.filter((model) => model.source === "azure_models"),
+			},
 		},
-	});
+		300,
+	);
 }
 
 async function createSession(userId: string, request: Request, env: Env): Promise<{ token: string; expiresAt: string }> {
@@ -759,14 +822,40 @@ function rowToAuthUser(row: SqlRow): AuthUser {
 }
 
 async function getUserFromRequest(request: Request, env: Env): Promise<AuthUser | undefined> {
+	return (await getAuthenticatedAccessFromRequest(request, env))?.user;
+}
+
+function rowToAccountEntitlement(row: SqlRow): AccountEntitlementRecord | undefined {
+	const receiptRef = readString(row.receipt_ref) || readString(row.receiptRef);
+	const planId = parsePlanId(row.plan_id) || parsePlanId(row.planId);
+	const amountRwf = readNumber(row.amount_rwf) || readNumber(row.amountRwf);
+	const status = readString(row.status);
+	const startsAt = readDateString(row.starts_at) || readDateString(row.startsAt);
+	const expiresAt = readDateString(row.expires_at) || readDateString(row.expiresAt);
+	const gpt5DailyMinutes = readNumber(row.gpt5_daily_minutes);
+	const gpt5DailyMsLimit = gpt5DailyMinutes === undefined ? readNumber(row.gpt5DailyMsLimit) : gpt5DailyMinutes * 60 * 1000;
+	if (!receiptRef || !planId || !amountRwf || !status || !startsAt || !expiresAt || gpt5DailyMsLimit === undefined) return undefined;
+	return { receiptRef, planId, amountRwf, status, startsAt, expiresAt, gpt5DailyMsLimit };
+}
+
+async function getAuthenticatedAccessFromRequest(request: Request, env: Env): Promise<AuthenticatedAccess | undefined> {
 	const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 	if (!token) return undefined;
 	const tokenHash = await sha256Base64(token);
+	const cachedAccess = await getCachedAuthenticatedAccess(tokenHash, env);
+	if (cachedAccess) return cachedAccess;
 	const sql = getSql(env);
 	const rows = await sql`
-		select u.id, u.email
+		select u.id, u.email, ae.receipt_ref, ae.plan_id, ae.amount_rwf, ae.status, ae.starts_at, ae.expires_at, ae.gpt5_daily_minutes
 		from auth_sessions s
 		join users u on u.id = s.user_id
+		left join lateral (
+			select receipt_ref, plan_id, amount_rwf, status, starts_at, expires_at, gpt5_daily_minutes
+			from account_entitlements
+			where user_id = u.id and expires_at > now()
+			order by expires_at desc
+			limit 1
+		) ae on true
 		where s.token_hash = ${tokenHash}
 			and s.revoked_at is null
 			and s.expires_at > now()
@@ -775,7 +864,31 @@ async function getUserFromRequest(request: Request, env: Env): Promise<AuthUser 
 	`;
 	if (rows.length === 0) return undefined;
 	await sql`update auth_sessions set last_seen_at = now() where token_hash = ${tokenHash}`;
-	return rowToAuthUser(rows[0]);
+	const access = { user: rowToAuthUser(rows[0]), entitlement: rowToAccountEntitlement(rows[0]) };
+	await cacheAuthenticatedAccess(tokenHash, access, env);
+	return access;
+}
+
+async function getCachedAuthenticatedAccess(tokenHash: string, env: Env): Promise<AuthenticatedAccess | undefined> {
+	const raw = await env.ENTITLEMENTS.get(`auth-cache:${tokenHash}`);
+	if (!raw) return undefined;
+	try {
+		const value = JSON.parse(raw);
+		if (!isJsonObject(value) || !isJsonObject(value.user)) return undefined;
+		const id = readString(value.user.id);
+		const email = readString(value.user.email);
+		if (!id || !email) return undefined;
+		const entitlementValue = isJsonObject(value.entitlement) ? value.entitlement : undefined;
+		const entitlement = entitlementValue ? rowToAccountEntitlement(entitlementValue) : undefined;
+		if (entitlement && Date.parse(entitlement.expiresAt) <= Date.now()) return undefined;
+		return { user: { id, email }, entitlement };
+	} catch {
+		return undefined;
+	}
+}
+
+async function cacheAuthenticatedAccess(tokenHash: string, access: AuthenticatedAccess, env: Env): Promise<void> {
+	await env.ENTITLEMENTS.put(`auth-cache:${tokenHash}`, JSON.stringify(access), { expirationTtl: 60 });
 }
 
 async function getAccountEntitlements(userId: string, env: Env): Promise<AccountEntitlementRecord[]> {
@@ -787,15 +900,8 @@ async function getAccountEntitlements(userId: string, env: Env): Promise<Account
 		order by expires_at desc
 	`;
 	return rows.flatMap((row): AccountEntitlementRecord[] => {
-		const receiptRef = readString(row.receipt_ref);
-		const planId = parsePlanId(row.plan_id);
-		const amountRwf = readNumber(row.amount_rwf);
-		const status = readString(row.status);
-		const startsAt = readDateString(row.starts_at);
-		const expiresAt = readDateString(row.expires_at);
-		const gpt5DailyMinutes = readNumber(row.gpt5_daily_minutes);
-		if (!receiptRef || !planId || !amountRwf || !status || !startsAt || !expiresAt || gpt5DailyMinutes === undefined) return [];
-		return [{ receiptRef, planId, amountRwf, status, startsAt, expiresAt, gpt5DailyMsLimit: gpt5DailyMinutes * 60 * 1000 }];
+		const entitlement = rowToAccountEntitlement(row);
+		return entitlement ? [entitlement] : [];
 	});
 }
 
@@ -988,15 +1094,17 @@ function isOpenRouterRoutableModelId(modelId: string): boolean {
 
 
 
-async function handleChatCompletions(request: Request, env: Env): Promise<Response> {
+async function handleChatCompletions(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 	const receiptHeader = request.headers.get("x-upskillsafrica-receipt");
-	const authUser = await getUserFromRequest(request, env);
+	const authAccess = await getAuthenticatedAccessFromRequest(request, env);
+	const authUser = authAccess?.user;
 	const body = await readJsonObject(request);
 	const modelId = resolveUpskillsafricaModelAlias(readString(body.model));
 	if (!modelId) {
 		return openAiError("model is required.", 400, "model_required");
 	}
-	let model = (await getModels(env)).find((candidate) => candidate.id === modelId);
+	const models = await getModels(env);
+	let model = models.find((candidate) => candidate.id === modelId);
 	if (!model && isOpenRouterRoutableModelId(modelId)) {
 		const openRouterId = modelId.startsWith("openrouter/") ? modelId : `openrouter/${modelId}`;
 		model = {
@@ -1020,7 +1128,7 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 		);
 	}
 
-	const accountEntitlement = authUser ? await getActiveAccountEntitlement(authUser.id, env) : undefined;
+	const accountEntitlement = authAccess?.entitlement;
 	const receiptEntitlement = receiptHeader ? await getValidEntitlement(receiptHeader, env) : undefined;
 	const paidEntitlement = accountEntitlement ? accountToEntitlement(accountEntitlement) : receiptEntitlement;
 	const entitlement = paidEntitlement || (hasOrgAccess ? createOrganisationCodeEntitlement(authUser) : undefined);
@@ -1032,20 +1140,30 @@ async function handleChatCompletions(request: Request, env: Env): Promise<Respon
 		);
 	}
 
-	const quota = await assertModelQuota(entitlement, model, env);
-	const startedAt = Date.now();
-	const upstreamResponse = model.source === "openrouter" ? await routeOpenRouter(body, model, env) : await routeAzure(body, model, env);
-	const response = await normalizeProviderResponse(upstreamResponse, model);
-	if (response.ok && quota.trackGpt5) {
-		try {
-			const elapsedMs = Date.now() - startedAt;
-			await addGpt5Usage(entitlement.ref, elapsedMs, env);
-			if (authUser) {
-				await addAccountModelUsage(authUser.id, model.id, elapsedMs, env);
-			}
-		} catch (error) {
-			console.warn("Failed to record Upskillsafrica model usage", error instanceof Error ? error.message : String(error));
+	const applyPaidSafeguards = !hasOrgAccess && !isOrganisationCodeEntitlement(entitlement);
+	let routedModel = model;
+	let quota = await assertModelQuota(entitlement, routedModel, env, applyPaidSafeguards);
+	if (quota.limited && applyPaidSafeguards) {
+		const fallback = findLowerCostFallbackModel(routedModel, models);
+		if (fallback) {
+			routedModel = fallback;
+			quota = await assertModelQuota(entitlement, routedModel, env, applyPaidSafeguards);
 		}
+	}
+	if (quota.limited) {
+		return openAiError(quota.message || `Daily limit reached for ${routedModel.id}.`, 429, "daily_model_limit_reached");
+	}
+	const routedBody = applyPaidSafeguards ? applyModelMaxTokenPolicy(body, routedModel) : body;
+	const startedAt = Date.now();
+	const upstreamResponse = routedModel.source === "openrouter"
+		? await routeOpenRouter(routedBody, routedModel, env)
+		: routedModel.source === "nvidia"
+			? await routeNvidia(routedBody, routedModel, env)
+			: await routeAzure(routedBody, routedModel, env);
+	const response = await normalizeProviderResponse(upstreamResponse, routedModel);
+	if (response.ok && (quota.trackGpt5 || quota.trackModelRequests)) {
+		const elapsedMs = Date.now() - startedAt;
+		ctx.waitUntil(recordModelUsage(entitlement, routedModel, elapsedMs, quota, authUser, env));
 	}
 	return response;
 }
@@ -1109,19 +1227,98 @@ async function hasValidOrgCode(request: Request, body: JsonObject, env: Env, use
 	return assignedRows.length > 0;
 }
 
-async function assertModelQuota(entitlement: EntitlementRecord, model: ManagedModel, env: Env): Promise<{ trackGpt5: boolean }> {
-	if (!isGpt5Model(model)) {
-		return { trackGpt5: false };
+async function assertModelQuota(
+	entitlement: EntitlementRecord,
+	model: ManagedModel,
+	env: Env,
+	applyPaidSafeguards: boolean,
+): Promise<ModelQuotaResult> {
+	const trackGpt5 = isGpt5Model(model);
+	const policy = applyPaidSafeguards ? getModelUsagePolicy(model) : undefined;
+	if (!trackGpt5 && !policy) {
+		return { trackGpt5: false, trackModelRequests: false };
 	}
 	const usage = await getDailyUsage(entitlement.ref, env);
-	if (usage.gpt5Ms >= entitlement.gpt5DailyMsLimit) {
-		throw new Error("Daily gpt-5 limit reached. Use o3, gpt-4o-mini, or OpenRouter free models until reset tomorrow.");
+	if (trackGpt5 && usage.gpt5Ms >= entitlement.gpt5DailyMsLimit) {
+		return {
+			trackGpt5,
+			trackModelRequests: Boolean(policy),
+			limited: true,
+			message: "Daily gpt-5 limit reached. Use o3, gpt-4o-mini, or OpenRouter free models until reset tomorrow.",
+		};
 	}
-	return { trackGpt5: true };
+	if (policy) {
+		const usedRequests = usage.modelRequests[model.id] || 0;
+		const dailyLimit = policy.dailyRequests[entitlement.planId];
+		if (usedRequests >= dailyLimit) {
+			return {
+				trackGpt5,
+				trackModelRequests: true,
+				limited: true,
+				message: `Daily limit reached for ${model.id} on the ${entitlement.planId} plan. Use a lower-cost Upskillsafrica model or try again tomorrow.`,
+			};
+		}
+	}
+	return { trackGpt5, trackModelRequests: Boolean(policy) };
 }
 
 function isGpt5Model(model: ManagedModel): boolean {
 	return model.id.includes("gpt-5") || model.deployment === "gpt-5" || model.model === "gpt-5";
+}
+
+function isOrganisationCodeEntitlement(entitlement: EntitlementRecord): boolean {
+	return entitlement.status === "organisation_code" || entitlement.ref.startsWith("org-code:");
+}
+
+function getModelUsagePolicy(model: ManagedModel): ModelUsagePolicy | undefined {
+	if (model.priceTier === "free") return undefined;
+	if (model.source === "nvidia" || model.id === "uaf_model_three_best") return NVIDIA_ULTRA_POLICY;
+	if (isGpt5Model(model) || model.id === "o3" || model.deployment === "o3" || model.capabilities.includes("reasoning")) return REASONING_PREMIUM_POLICY;
+	return STANDARD_PREMIUM_POLICY;
+}
+
+function applyModelMaxTokenPolicy(body: JsonObject, model: ManagedModel): JsonObject {
+	const policy = getModelUsagePolicy(model);
+	if (!policy) return body;
+	const next: JsonObject = { ...body, model: model.id };
+	const requestedMaxTokens = readNumber(next.max_tokens);
+	const requestedMaxCompletionTokens = readNumber(next.max_completion_tokens);
+	if (requestedMaxTokens === undefined && requestedMaxCompletionTokens === undefined) {
+		next.max_tokens = policy.defaultMaxTokens;
+		return next;
+	}
+	if (requestedMaxTokens !== undefined) {
+		next.max_tokens = Math.max(1, Math.min(Math.floor(requestedMaxTokens), policy.hardMaxTokens));
+	}
+	if (requestedMaxCompletionTokens !== undefined) {
+		next.max_completion_tokens = Math.max(1, Math.min(Math.floor(requestedMaxCompletionTokens), policy.hardMaxTokens));
+	}
+	return next;
+}
+
+function findLowerCostFallbackModel(model: ManagedModel, models: ManagedModel[]): ManagedModel | undefined {
+	const candidates = [
+		"gpt-4o",
+		"openrouter/free",
+		"openrouter/openai/gpt-oss-120b:free",
+		"openrouter/qwen/qwen3-next-80b-a3b-instruct:free",
+		"openrouter/google/gemma-4-26b-a4b-it:free",
+	];
+	return candidates.map((id) => models.find((candidate) => candidate.id === id)).find((candidate): candidate is ManagedModel => Boolean(candidate) && candidate.id !== model.id);
+}
+
+async function routeNvidia(body: JsonObject, model: ManagedModel, env: Env): Promise<Response> {
+	if (!env.NVIDIA_API_KEY) return json({ message: "NVIDIA API is not configured." }, 503);
+	const endpoint = (env.NVIDIA_API_ENDPOINT || DEFAULT_NVIDIA_API_ENDPOINT).replace(/\/$/, "");
+	const upstreamBody: JsonObject = { ...body, model: model.model || model.deployment || model.id };
+	return fetch(`${endpoint}/chat/completions`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${env.NVIDIA_API_KEY}`,
+		},
+		body: JSON.stringify(upstreamBody),
+	});
 }
 
 async function routeOpenRouter(body: JsonObject, model: ManagedModel, env: Env): Promise<Response> {
@@ -1263,24 +1460,43 @@ async function getValidEntitlement(ref: string, env: Env): Promise<EntitlementRe
 
 async function getDailyUsage(ref: string, env: Env): Promise<DailyUsageRecord> {
 	const date = new Date().toISOString().slice(0, 10);
+	const empty = (): DailyUsageRecord => ({ date, gpt5Ms: 0, modelRequests: {}, updatedAt: new Date().toISOString() });
 	const raw = await env.ENTITLEMENTS.get(`usage:${ref}:${date}`);
-	if (!raw) return { date, gpt5Ms: 0, updatedAt: new Date().toISOString() };
+	if (!raw) return empty();
 	try {
 		const value = JSON.parse(raw);
-		if (!isJsonObject(value)) return { date, gpt5Ms: 0, updatedAt: new Date().toISOString() };
+		if (!isJsonObject(value)) return empty();
+		const modelRequestsValue = isJsonObject(value.modelRequests) ? value.modelRequests : {};
+		const modelRequests = Object.fromEntries(
+			Object.entries(modelRequestsValue).flatMap(([modelId, count]) => {
+				const requestCount = readNumber(count);
+				return requestCount === undefined ? [] : [[modelId, Math.max(0, Math.floor(requestCount))]];
+			}),
+		);
 		return {
 			date,
 			gpt5Ms: readNumber(value.gpt5Ms) || 0,
+			modelRequests,
 			updatedAt: readString(value.updatedAt) || new Date().toISOString(),
 		};
 	} catch {
-		return { date, gpt5Ms: 0, updatedAt: new Date().toISOString() };
+		return empty();
 	}
 }
 
 async function addGpt5Usage(ref: string, elapsedMs: number, env: Env): Promise<void> {
 	const usage = await getDailyUsage(ref, env);
 	const updated = { ...usage, gpt5Ms: usage.gpt5Ms + Math.max(0, elapsedMs), updatedAt: new Date().toISOString() };
+	await env.ENTITLEMENTS.put(`usage:${ref}:${usage.date}`, JSON.stringify(updated), { expirationTtl: 48 * 60 * 60 });
+}
+
+async function addModelRequestUsage(ref: string, modelId: string, env: Env): Promise<void> {
+	const usage = await getDailyUsage(ref, env);
+	const updated = {
+		...usage,
+		modelRequests: { ...usage.modelRequests, [modelId]: (usage.modelRequests[modelId] || 0) + 1 },
+		updatedAt: new Date().toISOString(),
+	};
 	await env.ENTITLEMENTS.put(`usage:${ref}:${usage.date}`, JSON.stringify(updated), { expirationTtl: 48 * 60 * 60 });
 }
 
@@ -1296,6 +1512,29 @@ async function addAccountModelUsage(userId: string, modelId: string, elapsedMs: 
 			request_count = account_daily_model_usage.request_count + 1,
 			updated_at = now()
 	`;
+}
+
+async function recordModelUsage(
+	entitlement: EntitlementRecord,
+	model: ManagedModel,
+	elapsedMs: number,
+	quota: ModelQuotaResult,
+	authUser: AuthUser | undefined,
+	env: Env,
+): Promise<void> {
+	try {
+		if (quota.trackGpt5) {
+			await addGpt5Usage(entitlement.ref, elapsedMs, env);
+		}
+		if (quota.trackModelRequests) {
+			await addModelRequestUsage(entitlement.ref, model.id, env);
+		}
+		if (authUser) {
+			await addAccountModelUsage(authUser.id, model.id, elapsedMs, env);
+		}
+	} catch (error) {
+		console.warn("Failed to record Upskillsafrica model usage", error instanceof Error ? error.message : String(error));
+	}
 }
 
 function createTransactionRef(planId: PlanId): string {

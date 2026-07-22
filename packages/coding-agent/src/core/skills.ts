@@ -409,17 +409,31 @@ export function loadSkills(options: LoadSkillsOptions): LoadSkillsResult {
 
 			const existing = skillMap.get(skill.name);
 			if (existing) {
-				collisionDiagnostics.push({
-					type: "collision",
-					message: `name "${skill.name}" collision`,
-					path: skill.filePath,
-					collision: {
-						resourceType: "skill",
-						name: skill.name,
-						winnerPath: existing.filePath,
-						loserPath: skill.filePath,
-					},
-				});
+				// The same skill is commonly available through both ~/.agents/skills
+				// and a project .agents/skills directory. If both files contain the
+				// same content, this is a duplicate rather than an actionable
+				// collision; keep the higher-precedence skill without warning.
+				let isIdentical = false;
+				try {
+					isIdentical = readFileSync(existing.filePath, "utf-8") === readFileSync(skill.filePath, "utf-8");
+				} catch {
+					// Fall through to the normal collision diagnostic if either file
+					// cannot be read.
+				}
+
+				if (!isIdentical) {
+					collisionDiagnostics.push({
+						type: "collision",
+						message: `name "${skill.name}" collision`,
+						path: skill.filePath,
+						collision: {
+							resourceType: "skill",
+							name: skill.name,
+							winnerPath: existing.filePath,
+							loserPath: skill.filePath,
+						},
+					});
+				}
 			} else {
 				skillMap.set(skill.name, skill);
 				realPathSet.add(realPath);

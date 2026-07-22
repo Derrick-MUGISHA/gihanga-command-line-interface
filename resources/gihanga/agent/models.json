@@ -139,6 +139,22 @@
           }
         },
         {
+          "id": "uaf_model_three_best",
+          "name": "uaf_model_three_best (NVIDIA Nemotron 3 Ultra)",
+          "contextWindow": 1000000,
+          "maxTokens": 32768,
+          "input": [
+            "text"
+          ],
+          "reasoning": true,
+          "cost": {
+            "input": 1,
+            "output": 6,
+            "cacheRead": 0.1,
+            "cacheWrite": 1.25
+          }
+        },
+        {
           "id": "uaf_model_two_alpha",
           "name": "uaf_model_two_alpha (gpt-5.6-luna, org)",
           "contextWindow": 128000,

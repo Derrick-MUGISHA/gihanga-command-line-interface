@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, test, vi } from "vitest";
 import { type Component, Container, type Focusable, TUI } from "../../tui/src/tui.ts";
 import { VirtualTerminal } from "../../tui/test/virtual-terminal.ts";
 import type { AutocompleteProviderFactory } from "../src/core/extensions/types.ts";
+import { CONFIG_DIR_NAME } from "../src/config.ts";
 import type { SourceInfo } from "../src/core/source-info.ts";
 import type { AuthSelectorProvider } from "../src/modes/interactive/components/oauth-selector.ts";
 import {
@@ -120,6 +121,20 @@ describe("InteractiveMode.showStatus", () => {
 		// adds spacer + text
 		expect(fakeThis.chatContainer.children).toHaveLength(5);
 		expect(renderLastLine(fakeThis.chatContainer)).toContain("STATUS_TWO");
+	});
+
+	test("uses Gihanga changelog URL in update notifications", () => {
+		const fakeThis: any = {
+			chatContainer: new Container(),
+			ui: { requestRender: vi.fn() },
+		};
+
+		(InteractiveMode as any).prototype.showNewVersionNotification.call(fakeThis, { version: "0.81.1" });
+
+		const rendered = normalizeRenderedOutput(fakeThis.chatContainer);
+		expect(rendered).toContain("New version 0.81.1 is available. Run gihanga update");
+		expect(rendered).toContain("Changelog: https://console.upskillsafrica.org/changelog");
+		expect(rendered).not.toContain("https://pi.dev/changelog");
 	});
 });
 
@@ -498,15 +513,16 @@ describe("InteractiveMode.createBaseAutocompleteProvider", () => {
 		expect(isGihangaAllowedModelProvider("moonshotai-cn")).toBe(true);
 		expect(isGihangaAllowedModelProvider("anthropic")).toBe(true);
 		expect(isGihangaAllowedModelProvider("upskillsafrica")).toBe(true);
-		expect(isGihangaAllowedModelProvider("xai")).toBe(false);
-		expect(isGihangaAllowedModelProvider("groq")).toBe(false);
-		expect(isGihangaAllowedModelProvider("cerebras")).toBe(false);
-		expect(isGihangaAllowedModelProvider("together")).toBe(false);
-		expect(isGihangaAllowedModelProvider("fireworks")).toBe(false);
-		expect(isGihangaAllowedModelProvider("github-copilot")).toBe(false);
-		expect(isGihangaAllowedModelProvider("upskillsafrica-rask-d-technology")).toBe(false);
-		expect(isGihangaAllowedModelProvider("amazon-bedrock")).toBe(false);
-		expect(isGihangaAllowedModelProvider("huggingface")).toBe(false);
+		expect(isGihangaAllowedModelProvider("xai")).toBe(true);
+		expect(isGihangaAllowedModelProvider("groq")).toBe(true);
+		expect(isGihangaAllowedModelProvider("cerebras")).toBe(true);
+		expect(isGihangaAllowedModelProvider("together")).toBe(true);
+		expect(isGihangaAllowedModelProvider("fireworks")).toBe(true);
+		expect(isGihangaAllowedModelProvider("github-copilot")).toBe(true);
+		expect(isGihangaAllowedModelProvider("upskillsafrica-rask-d-technology")).toBe(true);
+		expect(isGihangaAllowedModelProvider("amazon-bedrock")).toBe(true);
+		expect(isGihangaAllowedModelProvider("huggingface")).toBe(true);
+		expect(isGihangaAllowedModelProvider("faux")).toBe(false);
 	});
 
 	test("Upskillsafrica account actions expose login, register, and organisation code", () => {
@@ -638,21 +654,21 @@ describe("InteractiveMode.showLoadedResources", () => {
 	function createExtensionFixtures(): ExtensionFixture[] {
 		return [
 			{
-				path: "/tmp/project/.pi/extensions/answer.ts",
-				sourceInfo: createSourceInfo("/tmp/project/.pi/extensions/answer.ts", {
+				path: `/tmp/project/${CONFIG_DIR_NAME}/extensions/answer.ts`,
+				sourceInfo: createSourceInfo(`/tmp/project/${CONFIG_DIR_NAME}/extensions/answer.ts`, {
 					source: "local",
 					scope: "project",
 					origin: "top-level",
-					baseDir: "/tmp/project/.pi/extensions",
+					baseDir: `/tmp/project/${CONFIG_DIR_NAME}/extensions`,
 				}),
 			},
 			{
-				path: "/tmp/project/.pi/extensions/local-index/index.ts",
-				sourceInfo: createSourceInfo("/tmp/project/.pi/extensions/local-index/index.ts", {
+				path: `/tmp/project/${CONFIG_DIR_NAME}/extensions/local-index/index.ts`,
+				sourceInfo: createSourceInfo(`/tmp/project/${CONFIG_DIR_NAME}/extensions/local-index/index.ts`, {
 					source: "local",
 					scope: "project",
 					origin: "top-level",
-					baseDir: "/tmp/project/.pi/extensions",
+					baseDir: `/tmp/project/${CONFIG_DIR_NAME}/extensions`,
 				}),
 			},
 			{
@@ -665,44 +681,44 @@ describe("InteractiveMode.showLoadedResources", () => {
 				}),
 			},
 			{
-				path: "/tmp/project/.pi/npm/node_modules/pi-markdown-preview/extensions/index.ts",
-				sourceInfo: createSourceInfo("/tmp/project/.pi/npm/node_modules/pi-markdown-preview/extensions/index.ts", {
+				path: `/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/pi-markdown-preview/extensions/index.ts`,
+				sourceInfo: createSourceInfo(`/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/pi-markdown-preview/extensions/index.ts`, {
 					source: "npm:pi-markdown-preview",
 					scope: "project",
 					origin: "package",
-					baseDir: "/tmp/project/.pi/npm/node_modules/pi-markdown-preview",
+					baseDir: `/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/pi-markdown-preview`,
 				}),
 			},
 			{
-				path: "/tmp/project/.pi/npm/node_modules/@scope/pi-scoped/extensions/index.ts",
-				sourceInfo: createSourceInfo("/tmp/project/.pi/npm/node_modules/@scope/pi-scoped/extensions/index.ts", {
+				path: `/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/@scope/pi-scoped/extensions/index.ts`,
+				sourceInfo: createSourceInfo(`/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/@scope/pi-scoped/extensions/index.ts`, {
 					source: "npm:@scope/pi-scoped",
 					scope: "project",
 					origin: "package",
-					baseDir: "/tmp/project/.pi/npm/node_modules/@scope/pi-scoped",
+					baseDir: `/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/@scope/pi-scoped`,
 				}),
 			},
 			{
-				path: "/tmp/project/.pi/git/github.com/HazAT/pi-interactive-subagents/extensions/index.ts",
+				path: `/tmp/project/${CONFIG_DIR_NAME}/git/github.com/HazAT/pi-interactive-subagents/extensions/index.ts`,
 				sourceInfo: createSourceInfo(
-					"/tmp/project/.pi/git/github.com/HazAT/pi-interactive-subagents/extensions/index.ts",
+					`/tmp/project/${CONFIG_DIR_NAME}/git/github.com/HazAT/pi-interactive-subagents/extensions/index.ts`,
 					{
 						source: "git:github.com/HazAT/pi-interactive-subagents",
 						scope: "project",
 						origin: "package",
-						baseDir: "/tmp/project/.pi/git/github.com/HazAT/pi-interactive-subagents",
+						baseDir: `/tmp/project/${CONFIG_DIR_NAME}/git/github.com/HazAT/pi-interactive-subagents`,
 					},
 				),
 			},
 			{
-				path: "/tmp/project/.pi/git/github.com/HazAT/pi-interactive-subagents/extensions/subagents/index.ts",
+				path: `/tmp/project/${CONFIG_DIR_NAME}/git/github.com/HazAT/pi-interactive-subagents/extensions/subagents/index.ts`,
 				sourceInfo: createSourceInfo(
-					"/tmp/project/.pi/git/github.com/HazAT/pi-interactive-subagents/extensions/subagents/index.ts",
+					`/tmp/project/${CONFIG_DIR_NAME}/git/github.com/HazAT/pi-interactive-subagents/extensions/subagents/index.ts`,
 					{
 						source: "git:github.com/HazAT/pi-interactive-subagents",
 						scope: "project",
 						origin: "package",
-						baseDir: "/tmp/project/.pi/git/github.com/HazAT/pi-interactive-subagents",
+						baseDir: `/tmp/project/${CONFIG_DIR_NAME}/git/github.com/HazAT/pi-interactive-subagents`,
 					},
 				),
 			},
@@ -1045,12 +1061,12 @@ describe("InteractiveMode.showLoadedResources", () => {
 	test("package extensions still strip index.ts correctly (regression guard)", () => {
 		const extensions: ExtensionFixture[] = [
 			{
-				path: "/tmp/project/.pi/npm/node_modules/pi-markdown-preview/extensions/index.ts",
-				sourceInfo: createSourceInfo("/tmp/project/.pi/npm/node_modules/pi-markdown-preview/extensions/index.ts", {
+				path: `/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/pi-markdown-preview/extensions/index.ts`,
+				sourceInfo: createSourceInfo(`/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/pi-markdown-preview/extensions/index.ts`, {
 					source: "npm:pi-markdown-preview",
 					scope: "project",
 					origin: "package",
-					baseDir: "/tmp/project/.pi/npm/node_modules/pi-markdown-preview",
+					baseDir: `/tmp/project/${CONFIG_DIR_NAME}/npm/node_modules/pi-markdown-preview`,
 				}),
 			},
 		];
@@ -1084,8 +1100,8 @@ describe("InteractiveMode.showLoadedResources", () => {
 		expect(normalizeRenderedOutput(fakeThis.loadedResourcesContainer)).toMatchInlineSnapshot(`
 "[Extensions]
   project
-    /tmp/project/.pi/extensions/answer.ts
-    /tmp/project/.pi/extensions/local-index
+    /tmp/project/.gihanga/extensions/answer.ts
+    /tmp/project/.gihanga/extensions/local-index
     git:github.com/HazAT/pi-interactive-subagents
       extensions
       extensions/subagents
@@ -1105,7 +1121,7 @@ describe("InteractiveMode.showLoadedResources", () => {
 		const fakeThis = createShowLoadedResourcesThis({
 			quietStartup: false,
 			cwd,
-			contextFiles: [{ path: path.join(home, ".pi", "agent", "AGENTS.md") }, { path: path.join(cwd, "AGENTS.md") }],
+			contextFiles: [{ path: path.join(home, CONFIG_DIR_NAME, "agent", "AGENTS.md") }, { path: path.join(cwd, "AGENTS.md") }],
 		});
 
 		(InteractiveMode as any).prototype.showLoadedResources.call(fakeThis, {
@@ -1114,7 +1130,7 @@ describe("InteractiveMode.showLoadedResources", () => {
 
 		const output = renderAll(fakeThis.loadedResourcesContainer).replace(/\\/g, "/");
 		expect(output).toContain("[Context]");
-		expect(output).toContain("~/.pi/agent/AGENTS.md, AGENTS.md");
+		expect(output).toContain(`~/${CONFIG_DIR_NAME}/agent/AGENTS.md, AGENTS.md`);
 		expect(output).not.toContain(`${cwd.replace(/\\/g, "/")}/AGENTS.md`);
 	});
 
@@ -1125,7 +1141,7 @@ describe("InteractiveMode.showLoadedResources", () => {
 			quietStartup: false,
 			toolOutputExpanded: true,
 			cwd,
-			contextFiles: [{ path: path.join(home, ".pi", "agent", "AGENTS.md") }, { path: path.join(cwd, "AGENTS.md") }],
+			contextFiles: [{ path: path.join(home, CONFIG_DIR_NAME, "agent", "AGENTS.md") }, { path: path.join(cwd, "AGENTS.md") }],
 		});
 
 		(InteractiveMode as any).prototype.showLoadedResources.call(fakeThis, {
@@ -1134,9 +1150,9 @@ describe("InteractiveMode.showLoadedResources", () => {
 
 		const output = renderAll(fakeThis.loadedResourcesContainer).replace(/\\/g, "/");
 		expect(output).toContain("[Context]");
-		expect(output).toContain("~/.pi/agent/AGENTS.md");
+		expect(output).toContain(`~/${CONFIG_DIR_NAME}/agent/AGENTS.md`);
 		expect(output).toContain("~/Development/pi-mono/AGENTS.md");
-		expect(output).not.toContain("~/.pi/agent/AGENTS.md, AGENTS.md");
+		expect(output).not.toContain(`~/${CONFIG_DIR_NAME}/agent/AGENTS.md, AGENTS.md`);
 	});
 
 	test("does not show verbose listing on quiet startup during reload", () => {

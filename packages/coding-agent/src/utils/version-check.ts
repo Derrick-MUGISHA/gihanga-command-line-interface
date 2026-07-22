@@ -1,7 +1,7 @@
 import { compare, valid } from "semver";
 import { getPiUserAgent } from "./pi-user-agent.ts";
 
-const LATEST_VERSION_URL = process.env.GIHANGA_LATEST_VERSION_URL;
+const DEFAULT_LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
 const DEFAULT_VERSION_CHECK_TIMEOUT_MS = 10000;
 
 export interface LatestPiRelease {
@@ -39,11 +39,9 @@ export async function getLatestPiRelease(
 	) {
 		return undefined;
 	}
-	if (!LATEST_VERSION_URL) {
-		return undefined;
-	}
+	const latestVersionUrl = process.env.GIHANGA_LATEST_VERSION_URL || DEFAULT_LATEST_VERSION_URL;
 
-	const response = await fetch(LATEST_VERSION_URL, {
+	const response = await fetch(latestVersionUrl, {
 		headers: {
 			"User-Agent": getPiUserAgent(currentVersion),
 			accept: "application/json",

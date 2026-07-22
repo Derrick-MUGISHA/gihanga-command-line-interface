@@ -13,6 +13,8 @@ interface BackendModel {
 	capabilities?: unknown;
 	priceTier?: unknown;
 	requiresOrgCode?: unknown;
+	contextWindow?: unknown;
+	maxTokens?: unknown;
 }
 
 interface BackendModelsResponse {
@@ -114,7 +116,14 @@ function inferReasoning(model: BackendModel, existing?: ModelDefinition): boolea
 	return Array.isArray(model.capabilities) && model.capabilities.includes("reasoning");
 }
 
+function inferContextWindow(model: BackendModel, existing?: ModelDefinition): number {
+	if (typeof model.contextWindow === "number" && model.contextWindow > 0) return model.contextWindow;
+	if (typeof existing?.contextWindow === "number" && existing.contextWindow > 0) return existing.contextWindow;
+	return 128000;
+}
+
 function inferMaxTokens(model: BackendModel, existing?: ModelDefinition): number {
+	if (typeof model.maxTokens === "number" && model.maxTokens > 0) return model.maxTokens;
 	if (typeof existing?.maxTokens === "number" && existing.maxTokens > 0) return existing.maxTokens;
 	return inferReasoning(model, existing) || model.requiresOrgCode === true ? 32768 : 16384;
 }
@@ -125,8 +134,7 @@ function mapBackendModel(model: BackendModel, existing?: ModelDefinition): Model
 		...existing,
 		id: model.id,
 		name: typeof model.name === "string" && model.name.trim().length > 0 ? model.name : (existing?.name ?? model.id),
-		contextWindow:
-			typeof existing?.contextWindow === "number" && existing.contextWindow > 0 ? existing.contextWindow : 128000,
+		contextWindow: inferContextWindow(model, existing),
 		maxTokens: inferMaxTokens(model, existing),
 		input: ["text"],
 		reasoning: inferReasoning(model, existing),

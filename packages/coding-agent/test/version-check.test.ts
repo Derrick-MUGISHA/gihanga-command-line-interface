@@ -7,11 +7,17 @@ import {
 	isNewerPackageVersion,
 } from "../src/utils/version-check.ts";
 
+const originalLatestVersionUrl = process.env.GIHANGA_LATEST_VERSION_URL;
 const originalSkipVersionCheck = process.env.PI_SKIP_VERSION_CHECK;
 const originalOffline = process.env.PI_OFFLINE;
 
 afterEach(() => {
 	vi.unstubAllGlobals();
+	if (originalLatestVersionUrl === undefined) {
+		delete process.env.GIHANGA_LATEST_VERSION_URL;
+	} else {
+		process.env.GIHANGA_LATEST_VERSION_URL = originalLatestVersionUrl;
+	}
 	if (originalSkipVersionCheck === undefined) {
 		delete process.env.PI_SKIP_VERSION_CHECK;
 	} else {
@@ -35,6 +41,7 @@ describe("version checks", () => {
 	});
 
 	it("returns only newer versions", async () => {
+		process.env.GIHANGA_LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
 		const fetchMock = vi.fn(async () => Response.json({ version: "1.2.3" }));
 		vi.stubGlobal("fetch", fetchMock);
 
@@ -43,6 +50,7 @@ describe("version checks", () => {
 	});
 
 	it("uses the pi.dev version check api with a pi user agent", async () => {
+		process.env.GIHANGA_LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
 		const fetchMock = vi.fn(async () => Response.json({ version: "1.2.4" }));
 		vi.stubGlobal("fetch", fetchMock);
 
@@ -59,6 +67,7 @@ describe("version checks", () => {
 	});
 
 	it("returns the active package metadata from the version check api", async () => {
+		process.env.GIHANGA_LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
 		const fetchMock = vi.fn(async () =>
 			Response.json({
 				packageName: "@new-scope/pi",
@@ -74,6 +83,7 @@ describe("version checks", () => {
 	});
 
 	it("returns update notes from the version check api", async () => {
+		process.env.GIHANGA_LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
 		const fetchMock = vi.fn(async () => Response.json({ note: " **Read this** ", version: "1.2.4" }));
 		vi.stubGlobal("fetch", fetchMock);
 
