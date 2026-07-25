@@ -701,7 +701,7 @@ async function handleOrgCodeVerify(request: Request, env: Env): Promise<Response
 	}
 	const activeUser = rowToAuthUser(userRows[0]);
 	const rows = await sql`
-		select code_hash, label, max_users, expires_at
+		select code_hash, label, max_users, expires_at, metadata
 		from organisation_codes
 		where code_hash = ${codeHash}
 			and is_active = true
@@ -711,6 +711,10 @@ async function handleOrgCodeVerify(request: Request, env: Env): Promise<Response
 	if (rows.length === 0) return json({ ok: false, message: "Invalid or expired organisation code." }, 404);
 
 	const code = rows[0];
+	const allowedEmail = getOrganisationCodeAllowedEmail(code.metadata);
+	if (allowedEmail && normalizeEmail(activeUser.email) !== allowedEmail) {
+		return json({ ok: false, message: "This organisation code is restricted to a different account." }, 403);
+	}
 	const alreadyAssigned = await sql`
 		select 1
 		from user_organisation_codes
@@ -829,6 +833,12 @@ function rowToAuthUser(row: SqlRow): AuthUser {
 	const email = readString(row.email);
 	if (!id || !email) throw new Error("Invalid user row.");
 	return { id, email };
+}
+
+function getOrganisationCodeAllowedEmail(metadata: unknown): string | undefined {
+	if (!isJsonObject(metadata)) return undefined;
+	const email = readString(metadata.allowed_email) || readString(metadata.allowedEmail);
+	return email ? normalizeEmail(email) : undefined;
 }
 
 async function getUserFromRequest(request: Request, env: Env): Promise<AuthUser | undefined> {
@@ -1215,14 +1225,18 @@ async function hasValidOrgCode(request: Request, body: JsonObject, env: Env, use
 	if (provided) {
 		const codeHash = await sha256Base64(provided);
 		const rows = await sql`
-			select code_hash
+			select code_hash, metadata
 			from organisation_codes
 			where code_hash = ${codeHash}
 				and is_active = true
 				and (expires_at is null or expires_at > now())
 			limit 1
 		`;
-		if (rows.length > 0) return true;
+		if (rows.length > 0) {
+			const allowedEmail = getOrganisationCodeAllowedEmail(rows[0].metadata);
+			if (!allowedEmail) return true;
+			return user ? normalizeEmail(user.email) === allowedEmail : false;
+		}
 	}
 	if (!user) return false;
 	const assignedRows = await sql`
