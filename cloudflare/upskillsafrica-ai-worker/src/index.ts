@@ -1019,6 +1019,8 @@ async function handleSubscriptionStart(request: Request, env: Env): Promise<Resp
 	const paymentRef = readString(paymentBody.ref);
 	const receiptRef = response.ok && paymentRef ? paymentRef : transactionRef;
 	if (response.ok && paymentRef && paymentRef !== transactionRef) {
+		await env.ENTITLEMENTS.put(`payment-ref:${transactionRef}`, paymentRef, { expirationTtl: 24 * 60 * 60 });
+		await env.ENTITLEMENTS.put(`merchant-ref:${paymentRef}`, transactionRef, { expirationTtl: 24 * 60 * 60 });
 		await env.ENTITLEMENTS.put(`pending:${paymentRef}`, JSON.stringify({ ...pendingRecord, ref: paymentRef }), { expirationTtl: 24 * 60 * 60 });
 		if (user) {
 			const sql = getSql(env);
@@ -1083,14 +1085,56 @@ async function handleSubscriptionVerify(transactionRef: string, env: Env): Promi
 	if (!env.PAYMENT_WORKER_URL) {
 		return json({ message: "Payment worker is not configured." }, 503);
 	}
-	const response = await callPaymentWorker(env, `/verify/${encodeURIComponent(transactionRef)}`, { headers: { Accept: "application/json" } });
+	const verificationRef = await resolvePaymentVerificationRef(transactionRef, env);
+	const response = await callPaymentWorker(env, `/verify/${encodeURIComponent(verificationRef)}`, { headers: { Accept: "application/json" } });
 	const payment = await safeReadJson(response);
 	const status = readString(payment.status) || "pending";
 	if (response.ok && isPaidStatus(status)) {
 		const record = await storeEntitlement(transactionRef, status, env);
-		return json({ transactionRef, status, entitlement: record });
+		return json({ transactionRef, verificationRef, status, entitlement: record });
 	}
-	return json({ transactionRef, status, payment }, response.ok ? 200 : response.status);
+	return json({ transactionRef, verificationRef, status, payment }, response.ok ? 200 : response.status);
+}
+
+function isUuidLike(value: string): boolean {
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+async function resolvePaymentVerificationRef(transactionRef: string, env: Env): Promise<string> {
+	if (isUuidLike(transactionRef)) return transactionRef;
+	const mappedRef = await env.ENTITLEMENTS.get(`payment-ref:${transactionRef}`);
+	if (mappedRef && isUuidLike(mappedRef)) return mappedRef;
+	if (!env.DATABASE_URL) return transactionRef;
+	try {
+		const sql = getSql(env);
+		const rows = await sql`
+			with original as (
+				select plan_id, phone, amount_rwf, created_at
+				from pending_subscriptions
+				where transaction_ref = ${transactionRef}
+				limit 1
+			)
+			select ps.transaction_ref
+			from pending_subscriptions ps, original o
+			where ps.transaction_ref <> ${transactionRef}
+				and ps.transaction_ref ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+				and ps.plan_id = o.plan_id
+				and ps.phone = o.phone
+				and ps.amount_rwf = o.amount_rwf
+				and ps.created_at between o.created_at - interval '10 minutes' and o.created_at + interval '10 minutes'
+			order by abs(extract(epoch from (ps.created_at - o.created_at))) asc
+			limit 1
+		`;
+		const candidate = readString(rows[0]?.transaction_ref);
+		if (candidate) {
+			await env.ENTITLEMENTS.put(`payment-ref:${transactionRef}`, candidate, { expirationTtl: 24 * 60 * 60 });
+			await env.ENTITLEMENTS.put(`merchant-ref:${candidate}`, transactionRef, { expirationTtl: 24 * 60 * 60 });
+			return candidate;
+		}
+	} catch {
+		return transactionRef;
+	}
+	return transactionRef;
 }
 
 function resolveUpskillsafricaModelAlias(modelId: string | undefined): string | undefined {
@@ -1428,6 +1472,8 @@ async function getPendingSubscription(ref: string, env: Env): Promise<PendingSub
 }
 
 async function storeEntitlement(ref: string, status: string, env: Env): Promise<EntitlementRecord> {
+	const existing = await getStoredAccountEntitlement(ref, env);
+	if (existing) return accountToEntitlement(existing);
 	const pending = await getPendingSubscription(ref, env);
 	const plans = getPlans(env);
 	const plan = plans.find((candidate) => candidate.id === pending?.planId) || plans[0];
@@ -1462,7 +1508,29 @@ async function storeEntitlement(ref: string, status: string, env: Env): Promise<
 	return record;
 }
 
+async function getStoredAccountEntitlement(ref: string, env: Env): Promise<AccountEntitlementRecord | undefined> {
+	if (!env.DATABASE_URL) return undefined;
+	try {
+		const sql = getSql(env);
+		const rows = await sql`
+			select receipt_ref, plan_id, amount_rwf, status, starts_at, expires_at, gpt5_daily_minutes
+			from account_entitlements
+			where receipt_ref = ${ref} or transaction_ref = ${ref}
+			order by created_at desc
+			limit 1
+		`;
+		return rows.length > 0 ? rowToAccountEntitlement(rows[0]) : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
 async function getValidEntitlement(ref: string, env: Env): Promise<EntitlementRecord | undefined> {
+	const accountEntitlement = await getStoredAccountEntitlement(ref, env);
+	if (accountEntitlement) {
+		const entitlement = accountToEntitlement(accountEntitlement);
+		return Date.parse(entitlement.expiresAt) > Date.now() ? entitlement : undefined;
+	}
 	const raw = await env.ENTITLEMENTS.get(`receipt:${ref}`);
 	if (!raw) return undefined;
 	try {
