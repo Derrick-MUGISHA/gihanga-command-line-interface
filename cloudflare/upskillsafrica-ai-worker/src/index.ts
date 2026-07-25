@@ -690,6 +690,16 @@ async function handleOrgCodeVerify(request: Request, env: Env): Promise<Response
 
 	const codeHash = await sha256Base64(organisationCode);
 	const sql = getSql(env);
+	const userRows = await sql`
+		select id, email
+		from users
+		where id = ${user.id} and is_active = true
+		limit 1
+	`;
+	if (userRows.length === 0) {
+		return json({ message: "Login session is stale. Run /kwinjira and login again, then add the organisation code." }, 401);
+	}
+	const activeUser = rowToAuthUser(userRows[0]);
 	const rows = await sql`
 		select code_hash, label, max_users, expires_at
 		from organisation_codes
@@ -704,7 +714,7 @@ async function handleOrgCodeVerify(request: Request, env: Env): Promise<Response
 	const alreadyAssigned = await sql`
 		select 1
 		from user_organisation_codes
-		where user_id = ${user.id} and code_hash = ${codeHash}
+		where user_id = ${activeUser.id} and code_hash = ${codeHash}
 		limit 1
 	`;
 	if (alreadyAssigned.length === 0 && typeof code.max_users === "number" && code.max_users > 0) {
@@ -721,7 +731,7 @@ async function handleOrgCodeVerify(request: Request, env: Env): Promise<Response
 
 	await sql`
 		insert into user_organisation_codes (user_id, code_hash)
-		values (${user.id}, ${codeHash})
+		values (${activeUser.id}, ${codeHash})
 		on conflict (user_id, code_hash) do nothing
 	`;
 
