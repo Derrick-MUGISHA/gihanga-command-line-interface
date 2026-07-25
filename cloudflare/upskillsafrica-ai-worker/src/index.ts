@@ -1016,30 +1016,16 @@ async function handleSubscriptionStart(request: Request, env: Env): Promise<Resp
 		body: JSON.stringify({ amount: plan.amountRwf, phone, transactionRef }),
 	});
 	const paymentBody = await safeReadJson(response);
-	const paymentRef = readString(paymentBody.ref);
-	const receiptRef = response.ok && paymentRef ? paymentRef : transactionRef;
-	if (response.ok && paymentRef && paymentRef !== transactionRef) {
-		await env.ENTITLEMENTS.put(`payment-ref:${transactionRef}`, paymentRef, { expirationTtl: 24 * 60 * 60 });
-		await env.ENTITLEMENTS.put(`merchant-ref:${paymentRef}`, transactionRef, { expirationTtl: 24 * 60 * 60 });
-		await env.ENTITLEMENTS.put(`pending:${paymentRef}`, JSON.stringify({ ...pendingRecord, ref: paymentRef }), { expirationTtl: 24 * 60 * 60 });
-		if (user) {
-			const sql = getSql(env);
-			await sql`
-				insert into pending_subscriptions (transaction_ref, plan_id, phone, amount_rwf, user_id)
-				values (${paymentRef}, ${plan.id}, ${phone}, ${plan.amountRwf}, ${user.id})
-				on conflict (transaction_ref) do update set
-					plan_id = excluded.plan_id,
-					phone = excluded.phone,
-					amount_rwf = excluded.amount_rwf,
-					user_id = excluded.user_id,
-					updated_at = now()
-			`;
-		}
+	const paymentReference = readString(paymentBody.reference);
+	const providerRef = extractPaymentProviderRef(paymentBody, transactionRef);
+	if (response.ok && providerRef) {
+		await env.ENTITLEMENTS.put(`payment-ref:${transactionRef}`, providerRef, { expirationTtl: 24 * 60 * 60 });
+		await env.ENTITLEMENTS.put(`merchant-ref:${providerRef}`, transactionRef, { expirationTtl: 24 * 60 * 60 });
 	}
 	if (!response.ok) {
 		return json(
 			{
-				transactionRef: receiptRef,
+				transactionRef,
 				merchantTransactionRef: transactionRef,
 				plan,
 				payment: paymentBody,
@@ -1048,7 +1034,7 @@ async function handleSubscriptionStart(request: Request, env: Env): Promise<Resp
 			response.status,
 		);
 	}
-	return json({ transactionRef: receiptRef, merchantTransactionRef: transactionRef, plan, payment: paymentBody });
+	return json({ transactionRef, merchantTransactionRef: transactionRef, paymentReference: paymentReference || transactionRef, plan, payment: paymentBody });
 }
 
 async function handleTerminalPay(request: Request, env: Env): Promise<Response> {
@@ -1085,56 +1071,45 @@ async function handleSubscriptionVerify(transactionRef: string, env: Env): Promi
 	if (!env.PAYMENT_WORKER_URL) {
 		return json({ message: "Payment worker is not configured." }, 503);
 	}
-	const verificationRef = await resolvePaymentVerificationRef(transactionRef, env);
-	const response = await callPaymentWorker(env, `/verify/${encodeURIComponent(verificationRef)}`, { headers: { Accept: "application/json" } });
-	const payment = await safeReadJson(response);
-	const status = readString(payment.status) || "pending";
-	if (response.ok && isPaidStatus(status)) {
-		const record = await storeEntitlement(transactionRef, status, env);
-		return json({ transactionRef, verificationRef, status, entitlement: record });
+	const canonicalRef = (await env.ENTITLEMENTS.get(`merchant-ref:${transactionRef}`)) || transactionRef;
+	const primary = await verifyPaymentReference(canonicalRef, env);
+	if (primary.response.ok && isPaidStatus(primary.status)) {
+		const record = await storeEntitlement(canonicalRef, primary.status, env);
+		return json({ transactionRef: canonicalRef, verificationRef: canonicalRef, status: primary.status, entitlement: record });
 	}
-	return json({ transactionRef, verificationRef, status, payment }, response.ok ? 200 : response.status);
-}
-
-function isUuidLike(value: string): boolean {
-	return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
-async function resolvePaymentVerificationRef(transactionRef: string, env: Env): Promise<string> {
-	if (isUuidLike(transactionRef)) return transactionRef;
-	const mappedRef = await env.ENTITLEMENTS.get(`payment-ref:${transactionRef}`);
-	if (mappedRef && isUuidLike(mappedRef)) return mappedRef;
-	if (!env.DATABASE_URL) return transactionRef;
-	try {
-		const sql = getSql(env);
-		const rows = await sql`
-			with original as (
-				select plan_id, phone, amount_rwf, created_at
-				from pending_subscriptions
-				where transaction_ref = ${transactionRef}
-				limit 1
-			)
-			select ps.transaction_ref
-			from pending_subscriptions ps, original o
-			where ps.transaction_ref <> ${transactionRef}
-				and ps.transaction_ref ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
-				and ps.plan_id = o.plan_id
-				and ps.phone = o.phone
-				and ps.amount_rwf = o.amount_rwf
-				and ps.created_at between o.created_at - interval '10 minutes' and o.created_at + interval '10 minutes'
-			order by abs(extract(epoch from (ps.created_at - o.created_at))) asc
-			limit 1
-		`;
-		const candidate = readString(rows[0]?.transaction_ref);
-		if (candidate) {
-			await env.ENTITLEMENTS.put(`payment-ref:${transactionRef}`, candidate, { expirationTtl: 24 * 60 * 60 });
-			await env.ENTITLEMENTS.put(`merchant-ref:${candidate}`, transactionRef, { expirationTtl: 24 * 60 * 60 });
-			return candidate;
+	const mappedFallbackRef = await env.ENTITLEMENTS.get(`payment-ref:${canonicalRef}`);
+	const fallbackRef = mappedFallbackRef && mappedFallbackRef !== canonicalRef ? mappedFallbackRef : transactionRef !== canonicalRef ? transactionRef : undefined;
+	if (fallbackRef) {
+		const fallback = await verifyPaymentReference(fallbackRef, env);
+		if (fallback.response.ok && isPaidStatus(fallback.status)) {
+			const record = await storeEntitlement(canonicalRef, fallback.status, env);
+			return json({ transactionRef: canonicalRef, verificationRef: fallbackRef, status: fallback.status, entitlement: record });
 		}
-	} catch {
-		return transactionRef;
 	}
-	return transactionRef;
+	return json(
+		{ transactionRef: canonicalRef, verificationRef: canonicalRef, status: primary.status, payment: primary.payment },
+		primary.response.ok ? 200 : primary.response.status,
+	);
+}
+
+async function verifyPaymentReference(ref: string, env: Env): Promise<{ response: Response; payment: JsonObject; status: string }> {
+	const response = await callPaymentWorker(env, `/verify/${encodeURIComponent(ref)}`, { headers: { Accept: "application/json" } });
+	const payment = await safeReadJson(response);
+	return { response, payment, status: readString(payment.status) || "pending" };
+}
+
+function extractPaymentProviderRef(paymentBody: JsonObject, transactionRef: string): string | undefined {
+	const provider = isJsonObject(paymentBody.provider) ? paymentBody.provider : undefined;
+	const providerData = provider && isJsonObject(provider.data) ? provider.data : undefined;
+	const candidates = [
+		readString(paymentBody.ref),
+		readString(paymentBody.transaction_ref),
+		provider ? readString(provider.ref) : undefined,
+		provider ? readString(provider.transaction_ref) : undefined,
+		providerData ? readString(providerData.ref) : undefined,
+		providerData ? readString(providerData.id) : undefined,
+	];
+	return candidates.find((candidate): candidate is string => Boolean(candidate && candidate !== transactionRef));
 }
 
 function resolveUpskillsafricaModelAlias(modelId: string | undefined): string | undefined {

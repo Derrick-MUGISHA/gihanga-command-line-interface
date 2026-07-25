@@ -15,7 +15,6 @@ packages/*/dist-firefox/
 !.dev.vars.example
 
 # Editor files
-.vscode/
 .zed/
 .idea/
 .claude/
@@ -41,3 +40,4 @@ plans/
 .gihanga/hf-sessions/
 .gihanga/hf-sessions-backup/
 collect.sh
+.gitignore
