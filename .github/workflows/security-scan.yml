@@ -1,0 +1,92 @@
+# Standard security scan. Required before anything merges into the default branch.
+# It never installs dependencies or runs project code (the worm runs on "build"),
+# so it is safe to run on infected branches.
+name: security-scan
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-scan:
+    name: security-scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check for the PolinRider / config-injection worm
+        shell: bash
+        run: |
+          set -uo pipefail
+          fail=0
+          flag() { echo "::error file=$1::$2"; fail=1; }
+
+          # 1. The obfuscated loader (api.js and copies) sets global['!']
+          while IFS= read -r f; do
+            grep -q "global\['!'\]" "$f" 2>/dev/null && flag "$f" "obfuscated worm loader (global['!'])"
+          done < <(git ls-files '*.js' '*.cjs' '*.mjs')
+
+          # 2. Hidden payload lines in build config files
+          while IFS= read -r f; do
+            awk 'length($0) > 400 { exit 1 }' "$f" || flag "$f" "very long line in a config file (hidden payload?)"
+            grep -qE ' {150,}' "$f" && flag "$f" "long run of spaces hiding code off-screen"
+          done < <(git ls-files | grep -E '(^|/)[^/]*\.config\.(js|cjs|mjs|ts)$|(^|/)\.eslintrc\.(js|cjs)$')
+
+          # 3. Build scripts that run the loader
+          while IFS= read -r f; do
+            grep -qE '"[^"]*":\s*"[^"]*node [^"]*api\.js' "$f" && flag "$f" "package.json script runs api.js"
+          done < <(git ls-files | grep -E '(^|/)package\.json$')
+
+          # 4. Worm leftovers in .gitignore
+          while IFS= read -r f; do
+            grep -qE '^[[:space:]]*/?(temp_auto_push\.bat|temp_interactive_push\.bat|branch_structure\.json)[[:space:]]*$' "$f" && flag "$f" "worm leftovers in .gitignore"
+          done < <(git ls-files | grep -E '(^|/)\.gitignore$')
+
+          # 5. VS Code tasks that auto-run when the folder is opened (how it spreads)
+          while IFS= read -r f; do
+            grep -q 'folderOpen' "$f" && flag "$f" "VS Code task auto-runs on folder open"
+          done < <(git ls-files | grep -E '(^|/)\.vscode/tasks\.json$')
+
+          [ "$fail" -eq 0 ] && echo "No worm indicators found."
+          exit $fail
+
+      - name: Secret scan (gitleaks, new commits only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          elif git rev-parse -q --verify HEAD~1 >/dev/null; then
+            range="HEAD~1..HEAD"
+          else
+            range="HEAD"
+          fi
+          docker run --rm --user "$(id -u):$(id -g)" -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*' \
+            -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.18.4 \
+            detect --source=/repo --log-opts="$range" --redact --no-banner -v
+
+      - name: Dependency audit (critical only, lockfile only, no install)
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ -f package-lock.json ]; then
+            npm audit --package-lock-only --audit-level=critical
+          elif [ -f pnpm-lock.yaml ]; then
+            # use the pnpm the project declares (pnpm 9 rejects a workspace file without "packages")
+            pnpm_spec=$(grep -oE '"packageManager":[[:space:]]*"pnpm@[0-9][0-9.]*' package.json | grep -oE 'pnpm@[0-9.]+' || true)
+            npx --yes "${pnpm_spec:-pnpm@10.28.2}" audit --audit-level critical --ignore-registry-errors
+          elif [ -f yarn.lock ]; then
+            echo "yarn.lock found; skipping audit (yarn audit needs an install)."
+          else
+            echo "No JavaScript lockfile; nothing to audit."
+          fi
